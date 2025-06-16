@@ -252,6 +252,43 @@
             font-size: 1.2em;
         }
 
+        .role-selector {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .role-selector label {
+            font-weight: bold;
+            color: #495057;
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+
+        .role-selector button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease;
+        }
+
+        .role-selector button:hover {
+            background-color: #0056b3;
+        }
+
+        .role-selector button.active {
+            background-color: #28a745;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+        }
+
         .back-button {
             display: inline-block;
             margin-top: 20px;
@@ -274,13 +311,20 @@
     <div class="container">
         <h1 id="comune-name">Caricamento Comune...</h1>
 
-        <div class="info-card">
+        <div class="role-selector">
+            <label for="select-role"><i class="fas fa-user-shield"></i> Stai visualizzando come:</label>
+            <button id="role-cittadino" data-role="cittadino">Cittadino</button>
+            <button id="role-comune" data-role="comune">Comune</button>
+            <button id="role-ente" data-role="ente">Ente</button>
+        </div>
+
+        <div id="criticity-info-card" class="info-card" data-roles="cittadino,comune,ente">
             <h2><i class="fas fa-exclamation-triangle mr-2"></i>Criticità Attuale</h2>
             <div id="criticity-display" class="criticity-box">N/D</div>
             <p id="criticity-description" class="mt-2"></p>
         </div>
 
-        <div class="info-card">
+        <div id="risks-info-card" class="info-card" data-roles="cittadino,comune,ente">
             <h2><i class="fas fa-shield-alt mr-2"></i>Informazioni sui Rischi</h2>
             <p id="rischio-generale-display"></p>
             <div id="rischi-specifici-list">
@@ -289,7 +333,7 @@
                 per questo comune.</p>
         </div>
 
-        <div class="info-card">
+        <div id="emergency-areas-info-card" class="info-card" data-roles="cittadino,comune,ente">
             <h2><i class="fas fa-map-marker-alt mr-2"></i>Aree di Emergenza / Punti Operativi</h2>
             <p>Di seguito le aree di emergenza (punti di raccolta, assistenza) e i punti operativi (es. cancelli, punti di monitoraggio) sul territorio comunale.</p>
             <div id="punti-mappa-display">
@@ -299,7 +343,7 @@
             <div id="map"></div>
         </div>
 
-        <div class="info-card">
+        <div id="contacts-info-card" class="info-card" data-roles="comune,ente">
             <h2><i class="fas fa-phone-alt mr-2"></i>Contatti di Emergenza</h2>
             <div id="contatti-emergenza-display">
             </div>
@@ -307,7 +351,7 @@
                 per questo comune.</p>
         </div>
 
-        <div class="info-card">
+        <div id="procedures-info-card" class="info-card" data-roles="ente">
             <h2><i class="fas fa-clipboard-list mr-2"></i>Procedure Operative per Ente</h2>
             <p>Queste procedure sono associate a rischi specifici e agli enti responsabili.</p>
             <div id="procedure-operative-display">
@@ -316,7 +360,7 @@
                 per questo comune.</p>
         </div>
 
-        <div class="info-card">
+        <div id="alerts-info-card" class="info-card" data-roles="cittadino,comune,ente">
             <h2><i class="fas fa-bell mr-2"></i>Allerte Attuali</h2>
             <div id="alerts-list">
                 </div>
@@ -374,6 +418,7 @@
         const alertComuneNamePlaceholder = document.getElementById('alert-comune-name-placeholder');
 
         let map = null; // Leaflet map variable
+        let currentRole = 'cittadino'; // Default role, will be overridden by URL param
 
         // Colori e descrizioni di criticità globali (DEVONO ESSERE IDENTICI a index.html)
         const globalColors = {
@@ -702,26 +747,132 @@
                 },
                 "alerts": [],
                 "lastUpdated": "2025-06-16T13:35:00Z"
+            },
+            "matera": {
+                "originalName": "Matera",
+                "criticità": "A3", // Esempio: Arancione per Matera
+                "rischi": {
+                    "generale": "Matera è soggetta a rischio idrogeologico e sismico.",
+                    "rischioidrogeologico": {
+                        "alertStatus": "A3",
+                        "alertMessage": "Rischio elevato di smottamenti e frane, specialmente nelle aree dei Sassi in caso di piogge intense.",
+                        "guidelines": {
+                            "before": ["Controllare lo stato delle abitazioni nei pressi di versanti.", "Evitare modifiche non autorizzate del territorio."],
+                            "during": ["Non avvicinarsi a pendii o aree instabili.", "In caso di smottamenti, allontanarsi immediatamente e avvisare le autorità."],
+                            "after": ["Attendere le verifiche geologiche prima di rientrare in aree a rischio."]
+                        }
+                    },
+                    "rischio sismico": {
+                        "alertStatus": "A2",
+                        "alertMessage": "Suscettibilità sismica moderata. Adottare precauzioni standard.",
+                        "guidelines": {
+                            "before": ["Fissare mobili pesanti.", "Individuare luoghi sicuri all'interno degli edifici.", "Preparare un kit di emergenza sismica."],
+                            "during": ["Cercare riparo sotto strutture robuste o in vani di porte.", "Allontanarsi da finestre e oggetti che possono cadere.", "Se all'aperto, allontanarsi da edifici, alberi, pali."],
+                            "after": ["Non rientrare in edifici danneggiati.", "Interrompere gas, acqua ed elettricità se possibile.", "Seguire le indicazioni delle squadre di soccorso."]
+                        }
+                    }
+                },
+                "aree_emergenza": [
+                    { "tipologia": "Punto di Raccolta Urbano", "nome": "Piazza Vittorio Veneto", "ubicazione": "Piazza Vittorio Veneto, Matera", "lat": 40.6658, "lon": 16.6074, "note": "Centro nevralgico per la raccolta e l'assistenza." }
+                ],
+                "punti_operativi": [],
+                "contatti_emergenza": [
+                    { "ruolo": "Sindaco Matera", "nome": "Domenico Bennardi", "contatto1": "0835241111", "contatto2": "sindaco@comune.mt.it" }
+                ],
+                "procedure_operative": {
+                    "rischioidrogeologico": {
+                        "ufficiotecnico": ["Monitoraggio costante delle aree a rischio frana.", "Interventi di messa in sicurezza."],
+                        "protezionecivileregionale": ["Supporto logistico e tecnico per evacuazioni."]
+                    }
+                },
+                "alerts": [
+                    { "id": "alert_001_matera", "type": "Idrogeologico", "severity": "Elevata", "title": "Allerta Frane e Smottamenti", "description": "Si prevedono piogge intense, elevato rischio di smottamenti e frane nelle zone collinari e dei Sassi. Evitare spostamenti non essenziali.", "date": "2025-06-16T10:00:00Z" }
+                ],
+                "lastUpdated": "2025-06-16T13:40:00Z"
+            },
+            "potenza": {
+                "originalName": "Potenza",
+                "criticità": "A2",
+                "rischi": {
+                    "generale": "Potenza è esposta principalmente a rischio sismico e idrogeologico.",
+                    "rischio sismico": {
+                        "alertStatus": "A2",
+                        "alertMessage": "Area a media sismicità. Prestare attenzione alle strutture.",
+                        "guidelines": {
+                            "before": ["Verificare l'integrità strutturale degli edifici.", "Avere un piano di emergenza familiare."],
+                            "during": ["Seguire le norme di comportamento antisismico."],
+                            "after": ["Controllare la propria sicurezza e quella dei familiari."]
+                        }
+                    }
+                },
+                "aree_emergenza": [
+                    { "tipologia": "Centro di accoglienza", "nome": "Palazzetto dello Sport", "ubicazione": "Via Campania, Potenza", "lat": 40.6400, "lon": 15.8000, "note": "Struttura coperta per accoglienza massiva." }
+                ],
+                "punti_operativi": [],
+                "contatti_emergenza": [
+                    { "ruolo": "Comune di Potenza", "nome": "Ufficio Protezione Civile", "contatto1": "0971415111", "contatto2": "protcivile@comune.potenza.it" }
+                ],
+                "procedure_operative": {
+                    "rischio sismico": {
+                        "comunepotenza": ["Attivare squadre di valutazione danni.", "Organizzare punti di assistenza e triage."],
+                        "vigilidelfuoco": ["Ricerca e soccorso dispersi.", "Messa in sicurezza edifici crollati."]
+                    }
+                },
+                "alerts": [],
+                "lastUpdated": "2025-06-16T13:45:00Z"
             }
-            // Aggiungi qui gli altri comuni dalla index.html con la struttura completa
         };
 
+        // Function to display sections based on role
+        function updateVisibility(role) {
+            const infoCards = document.querySelectorAll('.info-card');
+            infoCards.forEach(card => {
+                const rolesData = card.getAttribute('data-roles');
+                if (rolesData) {
+                    const allowedRoles = rolesData.split(',').map(r => r.trim());
+                    if (allowedRoles.includes(role)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
 
-        async function loadComuneData() {
+            // Update active button
+            document.querySelectorAll('.role-selector button').forEach(button => {
+                if (button.dataset.role === role) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+             // Re-initialize map to fix potential rendering issues if it was hidden
+            if (map) {
+                map.invalidateSize();
+            }
+        }
+
+        // Function to load and display data for the selected comune
+        async function loadComuneData(roleFromUrl = null) {
             const comuneParam = getParameterByName('comune');
             if (!comuneParam) {
                 comuneNameElement.textContent = "Errore: Nome comune non specificato nell'URL.";
                 return;
             }
 
+            // Determine the role: from URL first, then localStorage, then default
+            currentRole = roleFromUrl || localStorage.getItem('selectedRole') || 'cittadino';
+            localStorage.setItem('selectedRole', currentRole); // Save to localStorage
+
+            // Update visibility based on the determined role
+            updateVisibility(currentRole);
+
             const normalizedComuneName = normalizeComuneName(comuneParam);
             let originalComuneName = comuneParam; // Default to URL input
 
-            // Attempt to get the original municipality name from GeoJSON for correct display
             try {
-                // Not strictly necessary for local data, but good for future compatibility with real GeoJSON
-                // Make sure the path to your GeoJSON file is correct, e.g., if it's in a subfolder 'data'
-                const response = await fetch('basilicata/limits_R_17_municipalities.geojson'); // Relative path from your HTML files
+                const response = await fetch('basilicata/limits_R_17_municipalities.geojson');
                 const geojsonData = await response.json();
                 const foundFeature = geojsonData.features.find(f => normalizeComuneName(f.properties.name) === normalizedComuneName);
                 if (foundFeature) {
@@ -734,7 +885,6 @@
             comuneNameElement.textContent = `Bollettino del Comune di ${originalComuneName}`;
             alertComuneNamePlaceholder.textContent = originalComuneName; // Update alert placeholder
 
-            // Use dummyComuniData instead of Firebase
             const comuneData = dummyComuniData[normalizedComuneName];
 
             if (comuneData) {
@@ -990,7 +1140,20 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadComuneData);
+        document.addEventListener('DOMContentLoaded', () => {
+            const roleParam = getParameterByName('role');
+            loadComuneData(roleParam); // Load data and set initial visibility
+
+            // Add event listeners for role selection buttons
+            document.querySelectorAll('.role-selector button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const selectedRole = event.target.dataset.role;
+                    const comuneParam = getParameterByName('comune');
+                    // Reload the page with the new role parameter to ensure map re-render and clean state
+                    window.location.href = `comunecosta.html?comune=${comuneParam}&role=${selectedRole}`;
+                });
+            });
+        });
     </script>
 </body>
 
