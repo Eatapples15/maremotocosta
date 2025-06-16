@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bollettino del Comune - Protezione Civile Basilicata</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .info-card {
+            background-color: #fdfdfd;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-card p {
+            margin-bottom: 10px;
+        }
+
+        .criticity-box {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            margin-top: 10px;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        /* Dynamic colors based on Firebase data, if available, otherwise fallback */
+        .color-green { background-color: #28a745; }
+        .color-yellow { background-color: #ffc107; color: #333; }
+        .color-orange { background-color: #fd7e14; }
+        .color-red { background-color: #dc3545; }
+
+        .timestamp {
+            font-size: 0.9em;
+            color: #777;
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .alert-item {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start; /* Align icon to top */
+            gap: 15px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+        .alert-item.info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        .alert-item.warning { background-color: #fff3cd; border-color: #ffeeba; color: #856404; }
+        .alert-item.danger { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+
+        .alert-item i {
+            font-size: 1.8em;
+            /* Adjust icon color based on alert type */
+        }
+        .alert-item.info i { color: #17a2b8; }
+        .alert-item.warning i { color: #ffc107; }
+        .alert-item.danger i { color: #dc3545; }
+
+
+        .alert-item strong {
+            display: block; /* Ensures title is on its own line */
+            margin-bottom: 5px;
+            /* Inherits color from parent alert-item */
+        }
+        .alert-item p {
+            margin-bottom: 0;
+        }
+
+        .risk-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-left: 5px solid #007bff;
+            border-radius: 5px;
+        }
+
+        .risk-item strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #007bff;
+            font-size: 1.1em;
+        }
+
+        .punto-mappa-item {
+            background-color: #f8fcf8;
+            border: 1px solid #d4edda;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .punto-mappa-item .punto-type {
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 5px;
+            display: block;
+            font-size: 1.1em;
+        }
+
+        .punto-mappa-item .punto-name { /* Added for better structure */
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .punto-mappa-item .punto-address {
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .punto-mappa-item .punto-coords {
+            font-size: 0.9em;
+            color: #777;
+            margin-bottom: 5px;
+        }
+
+        .punto-mappa-item .punto-notes {
+            font-style: italic;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .no-data {
+            color: #888;
+            font-style: italic;
+            text-align: center;
+            padding: 15px;
+            border: 1px dashed #ccc;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        /* Stili per le nuove sezioni */
+        .contact-item,
+        .procedure-item {
+            background-color: #f0f8ff;
+            /* light blue background */
+            border-left: 4px solid #17a2b8;
+            /* info blue border */
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .contact-item strong,
+        .procedure-item strong {
+            color: #0056b3;
+            font-size: 1em;
+        }
+
+        .procedure-list {
+            list-style: disc;
+            margin-left: 20px;
+            margin-top: 5px;
+            color: #555;
+        }
+
+        .procedure-list li {
+            margin-bottom: 3px;
+        }
+
+        .procedure-risk-section {
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+            background-color: #fcfcfc;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .procedure-risk-section h3 {
+            color: #4CAF50;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 id="comune-name">Caricamento Comune...</h1>
+
+        <div class="info-card">
+            <h2><i class="fas fa-exclamation-triangle mr-2"></i>Criticità Attuale</h2>
+            <div id="criticity-display" class="criticity-box">N/D</div>
+            <p id="criticity-description" class="mt-2"></p>
+        </div>
+
+        <div class="info-card">
+            <h2><i class="fas fa-shield-alt mr-2"></i>Informazioni sui Rischi</h2>
+            <p id="rischio-generale-display"></p>
+            <div id="rischi-specifici-list">
+            </div>
+            <p class="no-data" id="no-risks-message" style="display: none;">Nessuna informazione sui rischi disponibile
+                per questo comune.</p>
+        </div>
+
+        <div class="info-card">
+            <h2><i class="fas fa-map-marker-alt mr-2"></i>Aree di Emergenza / Punti di Raccolta</h2>
+            <div id="punti-mappa-display">
+            </div>
+            <p class="no-data" id="no-punti-mappa-message" style="display: none;">Nessun punto mappa disponibile per
+                questo comune.</p>
+            <div id="map"></div>
+        </div>
+
+        <div class="info-card">
+            <h2><i class="fas fa-phone-alt mr-2"></i>Contatti di Emergenza</h2>
+            <div id="contatti-emergenza-display">
+            </div>
+            <p class="no-data" id="no-contatti-message" style="display: none;">Nessun contatto di emergenza definito
+                per questo comune.</p>
+        </div>
+
+        <div class="info-card">
+            <h2><i class="fas fa-clipboard-list mr-2"></i>Procedure Operative per Ente</h2>
+            <p>Queste procedure sono associate a rischi specifici e agli enti responsabili.</p>
+            <div id="procedure-operative-display">
+            </div>
+            <p class="no-data" id="no-procedure-message" style="display: none;">Nessuna procedura operativa definita
+                per questo comune.</p>
+        </div>
+
+        <div class="info-card">
+            <h2><i class="fas fa-bell mr-2"></i>Allerte Attuali</h2>
+            <div id="alerts-list">
+                </div>
+            <p class="no-data" id="no-alerts-message" style="display: none;">Non ci sono allerte attive al momento per
+                il comune di <span id="alert-comune-name-placeholder"></span>. Controllare regolarmente per
+                aggiornamenti.</p>
+        </div>
+
+        <div class="timestamp">
+            Dati aggiornati al: <span id="last-updated">Caricamento...</span>
+        </div>
+
+        <div class="text-center mt-6">
+            <a href="index.html" class="back-button">
+                <i class="fas fa-arrow-left mr-2"></i> Torna alla Panoramica Regionale
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Your web app's Firebase configuration (still here, but not used for data fetching in this mode)
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY", // <--- REPLACE WITH YOUR ACTUAL API KEY (or leave as placeholder)
+            authDomain: "bollettinoregionale.firebaseapp.com",
+            projectId: "bollettinoregionale",
+            databaseURL: "https://bollettinoregionale-default-rtdb.europe-west1.firebasedatabase.app/",
+            storageBucket: "bollettinoregionale.appspot.com",
+            messagingSenderId: "765538370497",
+            appId: "1:765538370497:web:9c4f569754c0df01cc2540",
+        };
+
+        // Initialize Firebase (even if not used for data, for consistency in future)
+        // const app = firebase.initializeApp(firebaseConfig); // Uncomment when Firebase is active
+        // const database = firebase.database(); // Uncomment when Firebase is active
+        // const comuniRef = database.ref('comuni'); // Uncomment when Firebase is active
+        // const coloriRef = database.ref('colori'); // Uncomment when Firebase is active
+
+
+        // HTML Elements
+        const comuneNameElement = document.getElementById('comune-name');
+        const criticityDisplay = document.getElementById('criticity-display');
+        const criticityDescription = document.getElementById('criticity-description');
+        const rischioGeneraleDisplay = document.getElementById('rischio-generale-display');
+        const rischiSpecificiList = document.getElementById('rischi-specifici-list');
+        const noRisksMessage = document.getElementById('no-risks-message');
+        const puntiMappaDisplay = document.getElementById('punti-mappa-display');
+        const noPuntiMappaMessage = document.getElementById('no-punti-mappa-message');
+        const contattiEmergenzaDisplay = document.getElementById('contatti-emergenza-display');
+        const noContattiMessage = document.getElementById('no-contatti-message');
+        const procedureOperativeDisplay = document.getElementById('procedure-operative-display');
+        const noProcedureMessage = document.getElementById('no-procedure-message');
+        const lastUpdatedElement = document.getElementById('last-updated');
+        const alertsList = document.getElementById('alerts-list');
+        const noAlertsMessage = document.getElementById('no-alerts-message');
+        const alertComuneNamePlaceholder = document.getElementById('alert-comune-name-placeholder');
+
+        let map = null; // Leaflet map variable
+
+        // Colori e descrizioni di criticità globali (DEVONO ESSERE IDENTICI a index.html)
+        const globalColors = {
+            "A1": { label: "Verde", hex: "#28a745", description: "di attenzione ordinaria, senza particolari criticità imminenti. Si raccomanda cautela e monitoraggio." },
+            "A2": { label: "Giallo", hex: "#ffc107", description: "di moderata attenzione, con possibili criticità locali. Si invita a prestare attenzione e a seguire le indicazioni delle autorità." },
+            "A3": { label: "Arancione", hex: "#fd7e14", description: "di attenzione elevata, con criticità significative e potenziale impatto. È consigliabile adottare misure precauzionali e tenersi informati." },
+            "A4": { label: "Rosso", hex: "#dc3545", description: "di allerta massima, con grave rischio e necessità di precauzioni immediate. Seguire strettamente le direttive delle autorità e, se necessario, attuare i piani di emergenza." }
+        };
+
+        // Funzione di normalizzazione (identica a quella usata in index.html e admin.html)
+        function normalizeComuneName(nome) {
+            if (!nome) return "";
+            return nome.toLowerCase().trim().replace(/\s+/g, ' ').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        // Funzione per normalizzare i tipi di rischio per le chiavi (copiata da admin.html)
+        function normalizeRiskType(riskName) {
+            return riskName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+
+        // Funzione per normalizzare il nome dell'ente per le chiavi (copiata da admin.html)
+        function normalizeEntityName(entityName) {
+            return entityName.toLowerCase().replace(/\s+/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, '');
+        }
+
+        // Funzione per ottenere il parametro dall'URL
+        function getParameterByName(name, url = window.location.href) {
+            name = name.replace(/[\[\]]/g, '\\$&');
+            const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+
+        // Funzione per ottenere il nome visualizzato del rischio da quello normalizzato
+        function getRiskDisplayNameFromNormalized(normalizedRiskType) {
+            // Lista dei rischi predefiniti (deve essere identica a quella in admin.html)
+            const predefinedRisks = [
+                "Rischio idraulico", "Rischio diga", "Rischio idrogeologico",
+                "Rischio incendi", "Rischio Sismico", "Rischio neve",
+                "Rischio Industriale", "Rischio Maremoto", "Rischio ambientale"
+            ];
+            // Trova il rischio originale confrontando la versione normalizzata
+            const foundRisk = predefinedRisks.find(risk => normalizeRiskType(risk) === normalizedRiskType);
+            // Se trovato, ritorna il nome originale, altrimenti prova a "de-normalizzare" o ritorna il normalizzato
+            return foundRisk || normalizedRiskType.charAt(0).toUpperCase() + normalizedRiskType.slice(1).replace(/([A-Z])/g, ' $1').trim();
+        }
+
+        // Funzione per ottenere la descrizione testuale del colore di criticità
+        function getColorDescription(criticityCode) {
+            return globalColors[criticityCode] ? globalColors[criticityCode].description : 'non definita. Contattare le autorità competenti per maggiori informazioni.';
+        }
+
+        // Funzione per ottenere la classe CSS per il colore di criticità
+        function getCriticityColorClass(criticityCode) {
+            const criticityMap = { 'A1': 'color-green', 'A2': 'color-yellow', 'A3': 'color-orange', 'A4': 'color-red' };
+            return criticityMap[criticityCode] || '';
+        }
+        
+        // Dati fittizi per dimostrazione, con inclusione di contatti, procedure e nuova struttura per i cancelli
+        // Questi dati sono la parte più importante che tu mi fornirai per ogni comune
+        const dummyComuniData = {
+            "policoro": {
+                "originalName": "Policoro",
+                "criticità": "A2", // Esempio: Giallo
+                "rischi": {
+                    "generale": "Il comune di Policoro presenta rischi legati a eventi idraulici e maremoto, data la sua posizione costiera.",
+                    "rischioidraulico": {
+                        "alertStatus": "A2", // Giallo
+                        "alertMessage": "Possibili esondazioni di corsi d'acqua minori in caso di forti piogge. Evitare zone a ridosso dei corsi d'acqua.",
+                        "guidelines": {
+                            "before": ["Pulire grondaie e tombini.", "Non gettare rifiuti nei fiumi.", "Verificare la stabilità di argini e sponde."],
+                            "during": ["Non avvicinarsi a corsi d'acqua.", "Non transitare in sottopassi.", "Muoversi solo se strettamente necessario."],
+                            "after": ["Seguire le indicazioni delle autorità.", "Verificare danni a strutture e infrastrutture.", "Non bere acqua dal rubinetto se non certificata."]
+                        }
+                    },
+                    "rischiomaremoto": {
+                        "alertStatus": "A1", // Verde, per dimostrazione
+                        "alertMessage": "Nessuna allerta maremoto in corso. Monitorare le comunicazioni ufficiali.",
+                        "guidelines": {
+                            "before": ["Informarsi sui piani di evacuazione costiera.", "Identificare i punti di raccolta elevati.", "Preparare un kit di emergenza."],
+                            "during": ["In caso di allerta, allontanarsi immediatamente dalla costa verso zone elevate.", "Non tornare indietro per recuperare beni materiali.", "Seguire le vie di fuga indicate."],
+                            "after": ["Attendere il cessato allarme prima di rientrare in aree costiere.", "Verificare l'integrità delle strutture.", "Collaborare con i soccorritori."]
+                        }
+                    }
+                },
+                "aree_emergenza": [
+                    { "tipologia": "Area di attesa", "nome": "Piazza Eraclea", "ubicazione": "Piazza Eraclea, Policoro", "lat": 40.2000, "lon": 16.6700, "note": "Punto di raccolta principale nel centro urbano." },
+                    { "tipologia": "Area di accoglienza", "nome": "Palazzetto dello Sport", "ubicazione": "Via Salvo D'Acquisto, Policoro", "lat": 40.2050, "lon": 16.6750, "note": "Struttura coperta attrezzata per l'accoglienza." }
+                ],
+                // NUOVI DATI PER I "CANCELLI" E ALTRI PUNTI OPERATIVI (specifici per gli operatori)
+                "punti_operativi": [
+                    { "tipologia": "Cancello Rosso (Maremoto)", "nome": "Accesso Litoranea Sud", "ubicazione": "Incocio SP103 / Via Litoranea Sud", "lat": 40.1890, "lon": 16.6900, "note": "Blocco totale traffico. Consentito solo mezzi di soccorso. Attivo in allerta A3/A4." },
+                    { "tipologia": "Cancello Arancione (Maremoto)", "nome": "Accesso Lido Nord", "ubicazione": "Via Lido, altezza Stabilimento Balneare 'La Perla'", "lat": 40.2100, "lon": 16.6780, "note": "Controllo accesso, informazione alla popolazione. Attivo in allerta A2/A3." },
+                    { "tipologia": "Punto Monitoraggio Idraulico", "nome": "Ponte sul Fiume Agri", "ubicazione": "SPexSS106, Ponte Fiume Agri", "lat": 40.2200, "lon": 16.7000, "note": "Punto sensibile per esondazioni, monitoraggio visivo." }
+                ],
+                "contatti_emergenza": [
+                    { "ruolo": "Sindaco", "nome": "Enrico Mascia", "contatto1": "0835978111", "contatto2": "sindaco.policoro@comune.it" },
+                    { "ruolo": "Responsabile Protezione Civile Comunale", "nome": "Giuseppe Rossi", "contatto1": "3331122334", "contatto2": "protcivile.policoro@comune.it" },
+                    { "ruolo": "Comando Carabinieri Policoro", "nome": "Ten. Marco Verdi", "contatto1": "0835972001", "contatto2": "" },
+                    { "ruolo": "Vigili del Fuoco Matera", "nome": "Sala Operativa", "contatto1": "0835311222", "contatto2": "" },
+                    { "ruolo": "Prefettura Matera", "nome": "Sala Operativa Unificata", "contatto1": "0835348111", "contatto2": "protocollo.prefmt@pec.interno.it" }
+                ],
+                "procedure_operative": {
+                    "rischioidraulico": {
+                        "sindaco": ["Emettere ordinanza di allerta.", "Attivare il COC.", "Coordinare le operazioni di soccorso."],
+                        "ufficiotecnico": ["Monitorare i livelli dei fiumi.", "Verificare la funzionalità delle pompe di sollevamento."],
+                        "vigilidelfuoco": ["Intervenire per prosciugamenti.", "Assistere la popolazione in aree allagate."],
+                        "polizialocale": ["Regolare il traffico nelle aree a rischio.", "Supportare l'evacuazione se necessaria."]
+                    },
+                    "rischiomaremoto": {
+                        "sindaco": ["Emettere ordinanza di evacuazione costiera.", "Attivare i punti di raccolta e accoglienza.", "Informare la popolazione tramite tutti i canali disponibili.", "Coordinare l'apertura e la gestione dei cancelli operativi."],
+                        "polizialocale": ["Pattugliare le aree costiere per assicurare l'evacuazione.", "Bloccare gli accessi alle zone a rischio tramite i cancelli designati.", "Assistere i cittadini nelle vie di fuga."],
+                        "protezionecivileregionale": ["Supportare il comune con risorse aggiuntive (mezzi, personale).", "Coordinare l'intervento a livello regionale con altri enti."],
+                        "carabinieri": ["Mantenere l'ordine pubblico nelle aree evacuate.", "Supportare le operazioni di evacuazione e controllo degli accessi."],
+                        "vigilidelfuoco": ["Intervenire per eventuali soccorsi in aree isolate o allagate.", "Supportare le operazioni di ricerca e soccorso."],
+                        "capitaneriadiporto": ["Diramare avvisi alle imbarcazioni.", "Monitorare lo stato del mare e le coste.", "Supportare l'evacuazione dalla zona portuale."]
+                    }
+                },
+                "alerts": [
+                    { "id": "alert_001_policoro", "type": "Maremoto", "severity": "Moderata", "title": "Allerta di Pre-Allarme Maremoto", "description": "Si raccomanda alla popolazione nelle zone costiere di allontanarsi dalla spiaggia e di spostarsi verso aree interne e sopraelevate. Seguire le indicazioni delle autorità.", "date": "2025-06-16T12:00:00Z" }
+                    // Aggiungi qui altre allerte specifiche per Policoro se necessario
+                ],
+                "lastUpdated": "2025-06-16T13:30:00Z"
+            },
+            "novasiri": {
+                "originalName": "Nova Siri",
+                "criticità": "A1",
+                "rischi": {
+                    "generale": "Nova Siri è esposta a rischi idrogeologici e, in misura minore, a rischio incendi durante i periodi estivi.",
+                    "rischioidrogeologico": {
+                        "alertStatus": "A2", // Giallo
+                        "alertMessage": "Possibili smottamenti in aree collinari. Si raccomanda prudenza.",
+                        "guidelines": {
+                            "before": ["Monitorare il territorio.", "Evitare costruzioni in zone a rischio."],
+                            "during": ["Non avvicinarsi a zone franose."],
+                            "after": ["Attendere verifiche tecniche."]
+                        }
+                    },
+                    "rischioincendi": {
+                        "alertStatus": "A1", // Verde
+                        "alertMessage": "Basso rischio incendi.",
+                        "guidelines": {
+                            "before": ["Pulire aree verdi.", "Non accendere fuochi."],
+                            "during": ["Chiamare i soccorsi."],
+                            "after": ["Verificare danni."]
+                        }
+                    }
+                },
+                "aree_emergenza": [
+                    { "tipologia": "Area di attesa", "nome": "Piazza Sant'Antonio", "ubicazione": "Piazza Sant'Antonio, Nova Siri", "lat": 40.1000, "lon": 16.5500, "note": "Punto di raccolta nel centro storico." }
+                ],
+                "punti_operativi": [], // nessun cancello specifico per Nova Siri per ora
+                "contatti_emergenza": [
+                    { "ruolo": "Sindaco", "nome": "Maria Neri", "contatto1": "0835536111", "contatto2": "" },
+                    { "ruolo": "Ufficio Tecnico", "nome": "Luca Bianchi", "contatto1": "0835536222", "contatto2": "ufficiotecnico.novasiri@comune.it" }
+                ],
+                "procedure_operative": {
+                    "rischioidrogeologico": {
+                        "sindaco": ["Valutare la situazione.", "Attivare squadre di monitoraggio."],
+                        "protezionecivileregionale": ["Fornire supporto tecnico."]
+                    }
+                },
+                "alerts": [],
+                "lastUpdated": "2025-06-16T13:35:00Z"
+            }
+            // Aggiungi qui gli altri comuni dalla index.html con la struttura completa
+        };
+
+
+        async function loadComuneData() {
+            const comuneParam = getParameterByName('comune');
+            if (!comuneParam) {
+                comuneNameElement.textContent = "Errore: Nome comune non specificato nell'URL.";
+                return;
+            }
+
+            const normalizedComuneName = normalizeComuneName(comuneParam);
+            let originalComuneName = comuneParam; // Default to URL input
+
+            // Attempt to get the original municipality name from GeoJSON for correct display
+            try {
+                // Not strictly necessary for local data, but good for future compatibility with real GeoJSON
+                const response = await fetch('/basilicata/limits_R_17_municipalities.geojson'); // Absolute path
+                const geojsonData = await response.json();
+                const foundFeature = geojsonData.features.find(f => normalizeComuneName(f.properties.name) === normalizedComuneName);
+                if (foundFeature) {
+                    originalComuneName = foundFeature.properties.name;
+                }
+            } catch (error) {
+                console.warn("Impossibile caricare GeoJSON o trovare nome comune originale:", error);
+            }
+
+            comuneNameElement.textContent = `Bollettino del Comune di ${originalComuneName}`;
+            alertComuneNamePlaceholder.textContent = originalComuneName; // Update alert placeholder
+
+            // Use dummyComuniData instead of Firebase
+            const comuneData = dummyComuniData[normalizedComuneName];
+
+            if (comuneData) {
+                // --- Criticity ---
+                const criticityCode = comuneData.criticità || 'N/D';
+                criticityDisplay.textContent = criticityCode;
+                const criticityColorClass = getCriticityColorClass(criticityCode);
+                criticityDisplay.className = `criticity-box ${criticityColorClass}`; // Apply class for styling
+                criticityDescription.textContent = `Lo stato attuale del comune è ${getColorDescription(criticityCode)}`;
+
+                // --- Risk Information ---
+                if (comuneData.rischi && Object.keys(comuneData.rischi).length > 0) {
+                    noRisksMessage.style.display = 'none';
+                    rischioGeneraleDisplay.textContent = comuneData.rischi.generale || 'Nessuna descrizione generale dei rischi.';
+                    rischiSpecificiList.innerHTML = ''; // Clear previous content
+
+                    for (const riskKey in comuneData.rischi) {
+                        if (riskKey === 'generale') continue; // Skip general description
+
+                        const riskDetails = comuneData.rischi[riskKey];
+                        const riskDisplayName = getRiskDisplayNameFromNormalized(riskKey);
+                        const riskItem = document.createElement('div');
+                        riskItem.className = 'risk-item';
+                        riskItem.innerHTML = `
+                            <strong>${riskDisplayName}:</strong>
+                            <p>Stato: <span class="font-semibold text-${riskDetails.alertStatus.toLowerCase().replace('a','')}-700 criticity-box ${getCriticityColorClass(riskDetails.alertStatus)}">${globalColors[riskDetails.alertStatus].label || riskDetails.alertStatus}</span></p>
+                            <p>${riskDetails.alertMessage}</p>
+                            ${riskDetails.guidelines ? `
+                                <h4 class="font-semibold text-sm mt-3 mb-1 text-gray-700">Linee Guida per i Cittadini:</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                                    ${riskDetails.guidelines.before && riskDetails.guidelines.before.length > 0 ? `<div class="bg-gray-50 p-2 rounded"><strong>Prima:</strong><ul class="list-disc ml-4">${riskDetails.guidelines.before.map(g => `<li>${g}</li>`).join('')}</ul></div>` : ''}
+                                    ${riskDetails.guidelines.during && riskDetails.guidelines.during.length > 0 ? `<div class="bg-gray-50 p-2 rounded"><strong>Durante:</strong><ul class="list-disc ml-4">${riskDetails.guidelines.during.map(g => `<li>${g}</li>`).join('')}</ul></div>` : ''}
+                                    ${riskDetails.guidelines.after && riskDetails.guidelines.after.length > 0 ? `<div class="bg-gray-50 p-2 rounded"><strong>Dopo:</strong><ul class="list-disc ml-4">${riskDetails.guidelines.after.map(g => `<li>${g}</li>`).join('')}</ul></div>` : ''}
+                                </div>
+                            ` : ''}
+                        `;
+                        rischiSpecificiList.appendChild(riskItem);
+                    }
+                } else {
+                    noRisksMessage.style.display = 'block';
+                    rischioGeneraleDisplay.textContent = ''; // Clear if no risks
+                }
+
+                // --- Emergency Areas / Collection Points (combined with Punti Operativi for map) ---
+                const allMapPoints = [];
+                if (comuneData.aree_emergenza) {
+                    allMapPoints.push(...comuneData.aree_emergenza);
+                }
+                if (comuneData.punti_operativi) {
+                    allMapPoints.push(...comuneData.punti_operativi);
+                }
+
+
+                if (allMapPoints.length > 0) {
+                    noPuntiMappaMessage.style.display = 'none';
+                    puntiMappaDisplay.innerHTML = '';
+                    const markers = [];
+                    let firstPointCoords = [0,0]; // Fallback for map center
+
+                    allMapPoints.forEach((punto, index) => {
+                        const puntoItem = document.createElement('div');
+                        puntoItem.className = 'punto-mappa-item';
+                        puntoItem.innerHTML = `
+                            <span class="punto-type">${punto.tipologia}</span>
+                            <p class="punto-name">${punto.nome}</p>
+                            <p class="punto-address"><i class="fas fa-map-pin mr-1"></i>${punto.ubicazione}</p>
+                            <p class="punto-coords">Lat: ${punto.lat}, Lon: ${punto.lon}</p>
+                            ${punto.note ? `<p class="punto-notes"><i class="fas fa-sticky-note mr-1"></i>${punto.note}</p>` : ''}
+                        `;
+                        puntiMappaDisplay.appendChild(puntoItem);
+
+                        if (punto.lat && punto.lon) {
+                            if (index === 0) firstPointCoords = [punto.lat, punto.lon]; // Set first point for initial view
+                            const marker = L.marker([punto.lat, punto.lon])
+                                .bindPopup(`<strong>${punto.nome}</strong><br>${punto.ubicazione}<br>${punto.tipologia}${punto.note ? `<br><em>${punto.note}</em>` : ''}`);
+                            markers.push(marker);
+                        }
+                    });
+
+                    // Initialize/update map
+                    if (!map) {
+                        map = L.map('map').setView(firstPointCoords, 13);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        }).addTo(map);
+                    } else {
+                        map.eachLayer(layer => {
+                            if (layer instanceof L.Marker) {
+                                map.removeLayer(layer);
+                            }
+                        });
+                        map.setView(firstPointCoords, map.getZoom()); // Keep current zoom or set default
+                    }
+
+                    // Add markers to a feature group and fit map to them
+                    const featureGroup = L.featureGroup(markers).addTo(map);
+                    map.fitBounds(featureGroup.getBounds().pad(0.5)); // Add padding so markers aren't on the edge
+                    map.setZoom(Math.min(map.getZoom(), 14)); // Max zoom to avoid being too close
+
+
+                } else {
+                    noPuntiMappaMessage.style.display = 'block';
+                    // Optionally hide map or show a message on it if no points
+                    if (map) {
+                        map.remove(); // Remove map instance if no points
+                        map = null;
+                        document.getElementById('map').innerHTML = '<p class="no-data">Mappa non disponibile senza punti di interesse.</p>';
+                    }
+                }
+
+                // --- Emergency Contacts ---
+                if (comuneData.contatti_emergenza && comuneData.contatti_emergenza.length > 0) {
+                    noContattiMessage.style.display = 'none';
+                    contattiEmergenzaDisplay.innerHTML = '';
+                    comuneData.contatti_emergenza.forEach(contact => {
+                        const contactItem = document.createElement('div');
+                        contactItem.className = 'contact-item';
+                        contactItem.innerHTML = `
+                            <strong>${contact.ruolo}:</strong> ${contact.nome ? contact.nome : ''}
+                            ${contact.contatto1 ? `<p>Contatto Principale: <a href="tel:${contact.contatto1}" class="text-blue-600 hover:underline">${contact.contatto1}</a></p>` : ''}
+                            ${contact.contatto2 ? `<p>Contatto Alternativo: <a href="mailto:${contact.contatto2}" class="text-blue-600 hover:underline">${contact.contatto2}</a></p>` : ''}
+                        `;
+                        contattiEmergenzaDisplay.appendChild(contactItem);
+                    });
+                } else {
+                    noContattiMessage.style.display = 'block';
+                }
+
+                // --- Operational Procedures ---
+                if (comuneData.procedure_operative && Object.keys(comuneData.procedure_operative).length > 0) {
+                    noProcedureMessage.style.display = 'none';
+                    procedureOperativeDisplay.innerHTML = '';
+                    for (const riskKey in comuneData.procedure_operative) {
+                        const riskDisplayName = getRiskDisplayNameFromNormalized(riskKey);
+                        const procedureRiskSection = document.createElement('div');
+                        procedureRiskSection.className = 'procedure-risk-section';
+                        procedureRiskSection.innerHTML = `<h3><i class="fas fa-clipboard-check mr-2"></i>Procedure per ${riskDisplayName}</h3>`;
+
+                        const proceduresForRisk = comuneData.procedure_operative[riskKey];
+                        for (const entityKey in proceduresForRisk) {
+                            const entityDisplayName = entityKey.charAt(0).toUpperCase() + entityKey.slice(1).replace(/([A-Z])/g, ' $1').replace('protezionecivileregionale', 'Protezione Civile Regionale').replace('vigilidelfuoco', 'Vigili del Fuoco').replace('polizialocale', 'Polizia Locale').replace('carabinieri', 'Carabinieri').replace('capitaneriadiporto', 'Capitaneria di Porto'); // Basic de-normalization for display
+                            const procedureItem = document.createElement('div');
+                            procedureItem.className = 'procedure-item';
+                            procedureItem.innerHTML = `
+                                <strong>${entityDisplayName}:</strong>
+                                <ul class="procedure-list">
+                                    ${proceduresForRisk[entityKey].map(proc => `<li>${proc}</li>`).join('')}
+                                </ul>
+                            `;
+                            procedureRiskSection.appendChild(procedureItem);
+                        }
+                        procedureOperativeDisplay.appendChild(procedureRiskSection);
+                    }
+                } else {
+                    noProcedureMessage.style.display = 'block';
+                }
+
+                // --- Alerts (New/Improved) ---
+                if (comuneData.alerts && comuneData.alerts.length > 0) {
+                    noAlertsMessage.style.display = 'none';
+                    alertsList.innerHTML = ''; // Clear initial message
+                    comuneData.alerts.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date, newest first
+
+                    comuneData.alerts.forEach(alert => {
+                        let iconClass = 'fas fa-info-circle';
+                        let alertClass = 'info'; // Default
+                        if (alert.severity) {
+                            switch (alert.severity.toLowerCase()) {
+                                case 'moderata':
+                                    iconClass = 'fas fa-exclamation-triangle';
+                                    alertClass = 'warning';
+                                    break;
+                                case 'elevata':
+                                case 'grave':
+                                    iconClass = 'fas fa-exclamation-circle';
+                                    alertClass = 'danger';
+                                    break;
+                                case 'bassa':
+                                case 'ordinaria':
+                                    iconClass = 'fas fa-info-circle';
+                                    alertClass = 'info';
+                                    break;
+                            }
+                        }
+
+                        const alertItem = document.createElement('div');
+                        alertItem.className = `alert-item ${alertClass}`;
+                        alertItem.innerHTML = `
+                            <i class="${iconClass}"></i>
+                            <div>
+                                <strong>${alert.title || 'Allerta Senza Titolo'} (${alert.type || 'Generico'})</strong>
+                                <p>${alert.description || 'Nessuna descrizione.'}</p>
+                                <p class="text-xs text-gray-700 mt-1">Data: ${new Date(alert.date).toLocaleString('it-IT')}</p>
+                            </div>
+                        `;
+                        alertsList.appendChild(alertItem);
+                    });
+                } else {
+                    noAlertsMessage.style.display = 'block';
+                    // Keep the default "Nessuna Allerta Attiva" message if no alerts
+                    alertsList.innerHTML = `
+                        <div class="alert-item info">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>Nessuna Allerta Attiva:</strong>
+                                <p>Non ci sono allerte attive al momento per il comune di <span id="alert-comune-name-placeholder">${originalComuneName}</span>. Controllare regolarmente per aggiornamenti.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // --- Last Updated Timestamp ---
+                if (comuneData.lastUpdated) {
+                    lastUpdatedElement.textContent = new Date(comuneData.lastUpdated).toLocaleString('it-IT');
+                } else {
+                    lastUpdatedElement.textContent = 'Non disponibile';
+                }
+
+            } else {
+                comuneNameElement.textContent = `Dati non trovati per il Comune di ${originalComuneName}`;
+                document.querySelector('.container').innerHTML += `<p class="no-data">Siamo spiacenti, i dati per questo comune non sono ancora disponibili o non esistono.</p>`;
+                // Hide all other sections if no data
+                document.querySelectorAll('.info-card').forEach(card => card.style.display = 'none');
+                document.getElementById('map').style.display = 'none'; // Ensure map is also hidden
+                lastUpdatedElement.textContent = 'N/D';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadComuneData);
+    </script>
+</body>
+
+</html>
