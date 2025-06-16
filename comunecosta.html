@@ -186,6 +186,16 @@
             font-size: 0.95em;
         }
 
+        /* Specific styles for Punti Operativi (Cancelli) */
+        .punto-mappa-item.operative-point {
+            background-color: #ffe6e6; /* Light red/pink for operational points */
+            border: 1px solid #ffcccc;
+        }
+        .punto-mappa-item.operative-point .punto-type {
+            color: #dc3545; /* Red for operative type */
+        }
+
+
         .no-data {
             color: #888;
             font-style: italic;
@@ -280,7 +290,8 @@
         </div>
 
         <div class="info-card">
-            <h2><i class="fas fa-map-marker-alt mr-2"></i>Aree di Emergenza / Punti di Raccolta</h2>
+            <h2><i class="fas fa-map-marker-alt mr-2"></i>Aree di Emergenza / Punti Operativi</h2>
+            <p>Di seguito le aree di emergenza (punti di raccolta, assistenza) e i punti operativi (es. cancelli, punti di monitoraggio) sul territorio comunale.</p>
             <div id="punti-mappa-display">
             </div>
             <p class="no-data" id="no-punti-mappa-message" style="display: none;">Nessun punto mappa disponibile per
@@ -422,7 +433,177 @@
             const criticityMap = { 'A1': 'color-green', 'A2': 'color-yellow', 'A3': 'color-orange', 'A4': 'color-red' };
             return criticityMap[criticityCode] || '';
         }
-        
+
+        // --- Dati GeoJSON per le Aree di Emergenza (per Policoro) ---
+        const emergencyAreasRawData = [
+            {
+                tipologia: "CENTRO DI ASSISTENZA ALLA POPOLAZIONE (C.A.P.1)",
+                nome: 'Polifunzionale "Palaercole"',
+                ubicazione: "Via Umbria",
+                lat: 40.20883394323659, lon: 16.665672863620713,
+                note: "Struttura coperta, attrezzata per l'accoglienza prolungata."
+            },
+            {
+                tipologia: "AREA DI ASSISTENZA ALLA POPOLAZIONE (A.P.1)",
+                nome: 'Parc. Polifunzionale "Palaercole" - Piazza A. Moro',
+                ubicazione: "Via Papa Giovanni Paolo II",
+                lat: 40.2083499609406, lon: 16.669912343286097,
+                note: "Area aperta adiacente al Palaercole."
+            },
+            {
+                tipologia: "AREA DI ASSISTENZA ALLA POPOLAZIONE (A.P.2)",
+                nome: 'Campo Sportivo "R. Periello"',
+                ubicazione: "Via San Gottardo",
+                lat: 40.202660874879165, lon: 16.670793115504434,
+                note: "Area esterna ampia, con possibilità di tende e strutture temporanee."
+            },
+            {
+                tipologia: "AREE DI AMMASSAMENTO",
+                nome: "Piazza A. Moro",
+                ubicazione: "Via Papa Giovanni Paolo II",
+                lat: 40.208777554175555, lon: 16.669838334392445,
+                note: "Punto di raccolta e smistamento."
+            },
+            {
+                tipologia: "AREA DI ASSISTENZA ALLA POPOLAZIONE COMPRENSIORALE (A.P.C.)",
+                nome: 'Parc. Polifunzionale "Palaercole" - Piazza A. Moro',
+                ubicazione: "Via Umbria",
+                lat: 40.20860047797445, lon: 16.66815086951912,
+                note: "Area strategica per il coordinamento comprensoriale."
+            },
+            {
+                tipologia: "AREA DI ATTESA (A.A.1)",
+                nome: 'Parc. Polifunzionale "Palaercole"',
+                ubicazione: "Via Umbria",
+                lat: 40.20860047797445, lon: 16.66815086951912,
+                note: "Punto di attesa temporaneo prima dell'assegnazione ad area di accoglienza."
+            },
+            {
+                tipologia: "AREA DI ATTESA (A.A.2)",
+                nome: 'Campo Sportivo "R. Periello"',
+                ubicazione: "Via San Gottardo",
+                lat: 40.202660874879165, lon: 16.670793115504434,
+                note: "Punto di attesa secondario."
+            },
+            {
+                tipologia: "AREA DI ATTESA (A.A.3)",
+                nome: 'Parc. "Ex Zuccherificio"',
+                ubicazione: "Via Lido",
+                lat: 40.20858421660303, lon: 16.685300392249157,
+                note: "Ampia area di attesa, facilmente raggiungibile dalla zona litoranea."
+            },
+            {
+                tipologia: "AREA DI ATTESA (A.A.4)",
+                nome: "Area Via Lido",
+                ubicazione: "Via Lido",
+                lat: 40.19755094954803, lon: 16.69994436668819,
+                note: "Punto di attesa per la zona sud del litorale."
+            },
+            {
+                tipologia: "AREA DI ATTESA (A.A.5)",
+                nome: "Area Via Verdi",
+                ubicazione: "Via Verdi",
+                lat: 40.17918103598341, lon: 16.678246928970157,
+                note: "Punto di attesa per la zona periferica sud-ovest."
+            },
+            {
+                tipologia: "AREA PARCHEGGIO POPOLAZIONE (A.M.1)",
+                nome: "Area Archeologica",
+                ubicazione: "Via Gonzaga",
+                lat: 40.211319791542614, lon: 16.671444679728058,
+                note: "Area designata per il parcheggio veicoli durante l'emergenza."
+            },
+            {
+                tipologia: "AREA PARCHEGGIO POPOLAZIONE (A.M.2)",
+                nome: "Prolungamento Via Siris",
+                ubicazione: "Via Siris",
+                lat: 40.19970002378048, lon: 16.6696314217047,
+                note: "Area secondaria di parcheggio."
+            },
+            {
+                tipologia: "CENTRO OPERATIVO COMUNALE (C.O.C)",
+                nome: "Edificio Comunale",
+                ubicazione: "Piazza A. Moro",
+                lat: 40.20903805929999, lon: 16.669785800372367,
+                note: "Sede principale del coordinamento delle operazioni di emergenza."
+            },
+            {
+                tipologia: "CENTRO COORDINAMENTO D'AMBITO (C.C.A)",
+                nome: 'Polifunzionale "Palaercole"',
+                ubicazione: "Via Umbria",
+                lat: 40.209632452759244, lon: 16.666928244855328,
+                note: "Punto di coordinamento per emergenze di più ampio raggio."
+            },
+        ];
+
+        // --- NUOVI DATI: Cancellli per Zona Arancione e Rossa (per Policoro) ---
+        const gateLocationsRawData = [
+            {
+                nome: "Cancello Torre Mare 2",
+                ubicazione: "C.da Torre Mare 2",
+                tipologia: "Cancello Rosso (Maremoto)", // Più descrittivo per operatore
+                lat: 40.20883394323659, lon: 16.665672863620713,
+                note: "Blocco totale traffico. Consentito solo mezzi di soccorso. Attivo in allerta A3/A4. Per accedere alla viabilità di sfollamento dalla costa."
+            },
+            {
+                nome: "Cancello Torre Mare",
+                ubicazione: "C.da Torre Mare (Area limitrofa)",
+                tipologia: "Cancello Rosso (Maremoto)",
+                lat: 40.207500, lon: 16.664500,
+                note: "Blocco totale traffico. Attivo in allerta A3/A4."
+            },
+            {
+                nome: "Cancello Torre Mare 3",
+                ubicazione: "C.da Torre Mare (Area limitrofa)",
+                tipologia: "Cancello Rosso (Maremoto)",
+                lat: 40.206000, lon: 16.663000,
+                note: "Blocco totale traffico. Attivo in allerta A3/A4."
+            },
+            {
+                nome: "Cancello Via Lido",
+                ubicazione: "Via Lido (altezza Ex Zuccherificio)",
+                tipologia: "Cancello Arancione/Rosso (Maremoto)",
+                lat: 40.20858421660303, lon: 16.685300392249157,
+                note: "Controllo accesso e informazione alla popolazione. Attivo in allerta A2/A3/A4. Percorso di evacuazione primario."
+            },
+            {
+                nome: "Cancello Santapelagina",
+                ubicazione: "C.da Santapelagina (area limitrofa)",
+                tipologia: "Cancello Arancione (Maremoto)",
+                lat: 40.197000, lon: 16.675000,
+                note: "Punto di controllo traffico e indicazione vie di fuga. Attivo in allerta A2/A3."
+            },
+            {
+                nome: "Cancello Santapelagina 1",
+                ubicazione: "C.da Santapelagina (Area limitrofa)",
+                tipologia: "Cancello Arancione (Maremoto)",
+                lat: 40.196000, lon: 16.674000,
+                note: "Punto di controllo traffico. Attivo in allerta A2/A3."
+            },
+            {
+                nome: "Cancello Santapelagina 2",
+                ubicazione: "C.da Santapelagina (Area limitrofa)",
+                tipologia: "Cancello Arancione (Maremoto)",
+                lat: 40.195000, lon: 16.673000,
+                note: "Punto di controllo traffico. Attivo in allerta A2/A3."
+            },
+            {
+                nome: "Cancello Marinella 1",
+                ubicazione: "C.da Marinella (Area limitrofa)",
+                tipologia: "Cancello Rosso (Maremoto)",
+                lat: 40.189000, lon: 16.690000,
+                note: "Blocco totale traffico. Attivo in allerta A3/A4. Per accedere alla viabilità di sfollamento dalla costa sud."
+            },
+            {
+                nome: "Cancello Marinella",
+                ubicazione: "C.da Marinella (Area limitrofa)",
+                tipologia: "Cancello Rosso (Maremoto)",
+                lat: 40.188000, lon: 16.691000,
+                note: "Blocco totale traffico. Attivo in allerta A3/A4."
+            },
+        ];
+
+
         // Dati fittizi per dimostrazione, con inclusione di contatti, procedure e nuova struttura per i cancelli
         // Questi dati sono la parte più importante che tu mi fornirai per ogni comune
         const dummyComuniData = {
@@ -450,16 +631,8 @@
                         }
                     }
                 },
-                "aree_emergenza": [
-                    { "tipologia": "Area di attesa", "nome": "Piazza Eraclea", "ubicazione": "Piazza Eraclea, Policoro", "lat": 40.2000, "lon": 16.6700, "note": "Punto di raccolta principale nel centro urbano." },
-                    { "tipologia": "Area di accoglienza", "nome": "Palazzetto dello Sport", "ubicazione": "Via Salvo D'Acquisto, Policoro", "lat": 40.2050, "lon": 16.6750, "note": "Struttura coperta attrezzata per l'accoglienza." }
-                ],
-                // NUOVI DATI PER I "CANCELLI" E ALTRI PUNTI OPERATIVI (specifici per gli operatori)
-                "punti_operativi": [
-                    { "tipologia": "Cancello Rosso (Maremoto)", "nome": "Accesso Litoranea Sud", "ubicazione": "Incocio SP103 / Via Litoranea Sud", "lat": 40.1890, "lon": 16.6900, "note": "Blocco totale traffico. Consentito solo mezzi di soccorso. Attivo in allerta A3/A4." },
-                    { "tipologia": "Cancello Arancione (Maremoto)", "nome": "Accesso Lido Nord", "ubicazione": "Via Lido, altezza Stabilimento Balneare 'La Perla'", "lat": 40.2100, "lon": 16.6780, "note": "Controllo accesso, informazione alla popolazione. Attivo in allerta A2/A3." },
-                    { "tipologia": "Punto Monitoraggio Idraulico", "nome": "Ponte sul Fiume Agri", "ubicazione": "SPexSS106, Ponte Fiume Agri", "lat": 40.2200, "lon": 16.7000, "note": "Punto sensibile per esondazioni, monitoraggio visivo." }
-                ],
+                "aree_emergenza": emergencyAreasRawData, // Usa i dati forniti
+                "punti_operativi": gateLocationsRawData, // Usa i dati forniti per i cancelli
                 "contatti_emergenza": [
                     { "ruolo": "Sindaco", "nome": "Enrico Mascia", "contatto1": "0835978111", "contatto2": "sindaco.policoro@comune.it" },
                     { "ruolo": "Responsabile Protezione Civile Comunale", "nome": "Giuseppe Rossi", "contatto1": "3331122334", "contatto2": "protcivile.policoro@comune.it" },
@@ -475,7 +648,7 @@
                         "polizialocale": ["Regolare il traffico nelle aree a rischio.", "Supportare l'evacuazione se necessaria."]
                     },
                     "rischiomaremoto": {
-                        "sindaco": ["Emettere ordinanza di evacuazione costiera.", "Attivare i punti di raccolta e accoglienza.", "Informare la popolazione tramite tutti i canali disponibili.", "Coordinare l'apertura e la gestione dei cancelli operativi."],
+                        "sindaco": ["Emettere ordinanza di evacuazione costiera.", "Attivare i punti di raccolta e accoglienza.", "Informare la popolazione tramite tutti i canali disponibili.", "Coordinare l'apertura e la gestione dei cancelli operativi (Zona Rossa/Arancione)."],
                         "polizialocale": ["Pattugliare le aree costiere per assicurare l'evacuazione.", "Bloccare gli accessi alle zone a rischio tramite i cancelli designati.", "Assistere i cittadini nelle vie di fuga."],
                         "protezionecivileregionale": ["Supportare il comune con risorse aggiuntive (mezzi, personale).", "Coordinare l'intervento a livello regionale con altri enti."],
                         "carabinieri": ["Mantenere l'ordine pubblico nelle aree evacuate.", "Supportare le operazioni di evacuazione e controllo degli accessi."],
@@ -547,7 +720,8 @@
             // Attempt to get the original municipality name from GeoJSON for correct display
             try {
                 // Not strictly necessary for local data, but good for future compatibility with real GeoJSON
-                const response = await fetch('/basilicata/limits_R_17_municipalities.geojson'); // Absolute path
+                // Make sure the path to your GeoJSON file is correct, e.g., if it's in a subfolder 'data'
+                const response = await fetch('basilicata/limits_R_17_municipalities.geojson'); // Relative path from your HTML files
                 const geojsonData = await response.json();
                 const foundFeature = geojsonData.features.find(f => normalizeComuneName(f.properties.name) === normalizedComuneName);
                 if (foundFeature) {
@@ -604,13 +778,13 @@
                     rischioGeneraleDisplay.textContent = ''; // Clear if no risks
                 }
 
-                // --- Emergency Areas / Collection Points (combined with Punti Operativi for map) ---
+                // --- Emergency Areas / Operational Points (combined for display and map) ---
                 const allMapPoints = [];
                 if (comuneData.aree_emergenza) {
-                    allMapPoints.push(...comuneData.aree_emergenza);
+                    allMapPoints.push(...comuneData.aree_emergenza.map(p => ({...p, isOperational: false})));
                 }
                 if (comuneData.punti_operativi) {
-                    allMapPoints.push(...comuneData.punti_operativi);
+                    allMapPoints.push(...comuneData.punti_operativi.map(p => ({...p, isOperational: true})));
                 }
 
 
@@ -622,7 +796,7 @@
 
                     allMapPoints.forEach((punto, index) => {
                         const puntoItem = document.createElement('div');
-                        puntoItem.className = 'punto-mappa-item';
+                        puntoItem.className = `punto-mappa-item ${punto.isOperational ? 'operative-point' : ''}`;
                         puntoItem.innerHTML = `
                             <span class="punto-type">${punto.tipologia}</span>
                             <p class="punto-name">${punto.nome}</p>
@@ -634,7 +808,31 @@
 
                         if (punto.lat && punto.lon) {
                             if (index === 0) firstPointCoords = [punto.lat, punto.lon]; // Set first point for initial view
-                            const marker = L.marker([punto.lat, punto.lon])
+
+                            let markerIcon;
+                            if (punto.isOperational) {
+                                // Custom icon for operational points (e.g., red pin for cancelli)
+                                markerIcon = L.icon({
+                                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', // Red marker for operational points
+                                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34],
+                                    shadowSize: [41, 41]
+                                });
+                            } else {
+                                // Default green marker for emergency areas
+                                markerIcon = L.icon({
+                                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', // Green marker for emergency areas
+                                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34],
+                                    shadowSize: [41, 41]
+                                });
+                            }
+
+                            const marker = L.marker([punto.lat, punto.lon], { icon: markerIcon })
                                 .bindPopup(`<strong>${punto.nome}</strong><br>${punto.ubicazione}<br>${punto.tipologia}${punto.note ? `<br><em>${punto.note}</em>` : ''}`);
                             markers.push(marker);
                         }
@@ -655,10 +853,13 @@
                         map.setView(firstPointCoords, map.getZoom()); // Keep current zoom or set default
                     }
 
-                    // Add markers to a feature group and fit map to them
-                    const featureGroup = L.featureGroup(markers).addTo(map);
-                    map.fitBounds(featureGroup.getBounds().pad(0.5)); // Add padding so markers aren't on the edge
-                    map.setZoom(Math.min(map.getZoom(), 14)); // Max zoom to avoid being too close
+                    // Add all markers to the map
+                    markers.forEach(marker => marker.addTo(map));
+                    if (markers.length > 0) {
+                        const featureGroup = L.featureGroup(markers);
+                        map.fitBounds(featureGroup.getBounds().pad(0.2)); // Add padding so markers aren't on the edge
+                        map.setZoom(Math.min(map.getZoom(), 14)); // Max zoom to avoid being too close
+                    }
 
 
                 } else {
