@@ -531,7 +531,7 @@
                 "vigili del fuoco": "vigilidelfuoco",
                 "polizia locale": "polizialocale",
                 "carabinieri": "carabinieri",
-                "prefettura": "prefettura",
+                "prefettura": "prefettura", // Aggiunto mapping per "prefettura"
                 "capitaneria di porto": "capitaneriadiporto",
                 "protezione civile regionale": "protezionecivileregionale",
                 "centro operativo comunale (coc)": "coc" // Example for COC
@@ -850,6 +850,12 @@
                             "Pattugliare le zone a rischio per prevenire sciacallaggi e garantire la protezione dei beni.",
                             "Supportare le operazioni di evacuazione e assistenza alla popolazione, fornendo anche supporto logistico.",
                             "Coordinare con le altre forze dell'ordine e il COC le attività di controllo del territorio."
+                        ],
+                        "prefettura": [ // Aggiunta Prefettura per rischio idrogeologico
+                            "Coordinare gli enti a livello provinciale per interventi di protezione civile.",
+                            "Valutare la necessità di dichiarazione dello stato di emergenza provinciale o regionale.",
+                            "Fornire supporto e coordinamento alle operazioni di soccorso e assistenza alla popolazione.",
+                            "Monitorare la situazione e diffondere le informazioni a livello superiore."
                         ]
                     },
                     "rischiomaremoto": {
@@ -887,6 +893,12 @@
                             "Monitorare lo stato del mare e le condizioni delle coste dal punto di vista marittimo, fornendo dati aggiornati.",
                             "Supportare l'evacuazione dalla zona portuale e delle aree demaniali marittime, inclusi stabilimenti balneari e strutture turistiche.",
                             "Condurre operazioni di ricerca e soccorso in mare in caso di imbarcazioni in difficoltà o persone disperse."
+                        ],
+                        "prefettura": [ // Aggiunta Prefettura per rischio maremoto
+                            "Attivare il Centro Coordinamento Soccorsi (CCS) e/o il Comitato Provinciale di Protezione Civile.",
+                            "Emettere comunicazioni ufficiali e coordinare la risposta provinciale all'emergenza maremoto.",
+                            "Disporre l'intervento di ulteriori forze dell'ordine o militari a supporto delle operazioni comunali.",
+                            "Valutare la richiesta di riconoscimento dello stato di emergenza di rilievo nazionale."
                         ]
                     }
                 },
@@ -932,7 +944,8 @@
                     "rischioidrogeologico": {
                         "sindaco": ["Valutare la situazione e attivare il presidio del territorio.", "Emettere avvisi di cautela alla popolazione nelle aree a rischio.", "Organizzare squadre di monitoraggio per i versanti instabili."],
                         "ufficiotecnico": ["Effettuare sopralluoghi tecnici per valutare la stabilità dei terreni.", "Disporre eventuali interventi urgenti di messa in sicurezza."],
-                        "protezionecivileregionale": ["Fornire supporto tecnico con geologi e mezzi speciali.", "Valutare la necessità di attivare piani di evacuazione regionali."]
+                        "protezionecivileregionale": ["Fornire supporto tecnico con geologi e mezzi speciali.", "Valutare la necessità di attivare piani di evacuazione regionali."],
+                        "prefettura": ["Coordinare gli enti provinciali per la gestione dell'emergenza.", "Valutare la necessità di supporto extra-comunale."]
                     }
                 },
                 "alerts": [],
@@ -948,7 +961,7 @@
                         "alertMessage": "Rischio elevato di smottamenti e frane, specialmente nelle aree dei Sassi in caso di piogge intense.",
                         "guidelines": {
                             "before": ["Controllare lo stato delle abitazioni nei pressi di versanti e canali di scolo.", "Evitare modifiche non autorizzate del territorio che possano alterare il deflusso delle acque."],
-                            "during": ["Non avvicinarsi a pendii instabili o corsi d'acqua in piena.", "In caso di smottamenti, allontanarsi immediatamente e avvisare le autorità (112, Protezione Civile)."],
+                            "during": ["Non avvicinarsi a pendii instabili o corsi d'acqua in piena.", "In caso di smottamenti, allontanarsi immediatamente e avvisare le autorità (112, Protezione Civile).."],
                             "after": ["Attendere le verifiche geologiche e strutturali prima di rientrare in aree a rischio o in abitazioni danneggiate."]
                         }
                     }
@@ -964,8 +977,9 @@
                     "rischioidrogeologico": {
                         "sindaco": ["Attivare il COC e il piano di emergenza comunale.", "Disporre l'evacuazione preventiva delle aree a rischio frana.", "Coordinare gli interventi di soccorso e messa in sicurezza."],
                         "ufficiotecnico": ["Monitoraggio costante delle aree a rischio frana con droni e sensori.", "Disporre e supervisionare gli interventi urgenti di messa in sicurezza dei versanti.", "Valutare l'agibilità degli edifici post-evento."],
-                        "vigilidelfuoco": ["Intervenire per soccorso a persone intrappolate o isolate da frane.", "Supportare le operazioni di evacuazione e allestimento aree di accoglienza."],
-                        "carabinieri": ["Mantenere l'ordine pubblico nelle aree evacuate e nelle zone colpite.", "Pattugliare le strade interrotte per impedire l'accesso."]
+                        "vigilidelfuoco": ["Intervenire per soccorso a persone intrappolate o isolate da frane.", "Supportare le evacuazioni e allestimento aree di accoglienza."],
+                        "carabinieri": ["Mantenere l'ordine pubblico nelle aree colpite e nei centri di accoglienza.", "Pattugliare le strade interrotte per impedire l'accesso."],
+                        "prefettura": ["Attivare il CCS provinciale.", "Coordinare risorse e mezzi a livello provinciale.", "Dichiarare lo stato di calamità se necessario."]
                     }
                 },
                 "alerts": [
@@ -1000,7 +1014,8 @@
                         "comunepotenza": ["Attivare immediatamente il COC e diramare le prime informazioni alla popolazione.", "Organizzare squadre di valutazione danni sugli edifici pubblici e privati.", "Predisporre i punti di assistenza e triage sanitario."],
                         "vigilidelfuoco": ["Ricerca e soccorso di persone sotto le macerie.", "Messa in sicurezza di edifici crollati o pericolanti.", "Interventi per fughe di gas o incendi post-sisma."],
                         "carabinieri": ["Garantire l'ordine e la sicurezza pubblica nelle aree colpite e nei centri di accoglienza.", "Supportare le evacuazioni e il blocco delle aree inagibili."],
-                        "protezionecivileregionale": ["Coordinare l'invio di colonne mobili e risorse da altre province/regioni.", "Allestire campi base e strutture di accoglienza di media/lunga durata."]
+                        "protezionecivileregionale": ["Coordinare l'invio di colonne mobili e risorse da altre province/regioni.", "Allestire campi base e strutture di accoglienza di media/lunga durata."],
+                        "prefettura": ["Attivare il CCS provinciale.", "Richiedere l'intervento dell'Esercito in caso di necessità.", "Coordinare la distribuzione degli aiuti umanitari."]
                     }
                 },
                 "alerts": [],
@@ -1262,7 +1277,7 @@
                         const proceduresForRisk = comuneData.procedure_operative[riskKey];
                         // Sort entities for consistent display (e.g., Sindaco, Polizia Locale, Carabinieri, etc.)
                         const sortedEntityKeys = Object.keys(proceduresForRisk).sort((a, b) => {
-                            const order = ["sindaco", "coc", "polizialocale", "carabinieri", "vigilidelfuoco", "capitaneriadiporto", "ufficiotecnico", "protezionecivileregionale", "prefettura"]; // Added prefettura
+                            const order = ["sindaco", "coc", "prefettura", "polizialocale", "carabinieri", "vigilidelfuoco", "capitaneriadiporto", "ufficiotecnico", "protezionecivileregionale"]; // Aggiornato l'ordine con "prefettura"
                             const indexA = order.indexOf(normalizeEntityName(a));
                             const indexB = order.indexOf(normalizeEntityName(b));
                             if (indexA === -1 && indexB === -1) return a.localeCompare(b); // If both not in order, sort alphabetically
@@ -1281,7 +1296,7 @@
                                 .replace('carabinieri', 'Carabinieri')
                                 .replace('capitaneriadiporto', 'Capitaneria di Porto')
                                 .replace('protezionecivileregionale', 'Protezione Civile Regionale')
-                                .replace('prefettura', 'Prefettura')
+                                .replace('prefettura', 'Prefettura') // Aggiunto display name per Prefettura
                                 .split(' ')
                                 .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter of each word
                                 .join(' ');
