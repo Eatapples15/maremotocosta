@@ -145,6 +145,26 @@
             color: #007bff;
             font-size: 1.1em;
         }
+        .risk-guidelines { /* New style for guidelines section */
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed #ddd;
+        }
+        .risk-guidelines h4 {
+            color: #555;
+            font-size: 1em;
+            margin-bottom: 8px;
+        }
+        .risk-guidelines ul {
+            list-style: disc;
+            margin-left: 20px;
+            margin-bottom: 5px;
+            color: #666;
+        }
+        .risk-guidelines ul li {
+            margin-bottom: 3px;
+        }
+
 
         .punto-mappa-item {
             background-color: #f8fcf8;
@@ -207,8 +227,7 @@
         }
 
         /* Stili per le nuove sezioni */
-        .contact-item,
-        .procedure-item {
+        .contact-item {
             background-color: #f0f8ff;
             /* light blue background */
             border-left: 4px solid #17a2b8;
@@ -219,37 +238,59 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .contact-item strong,
-        .procedure-item strong {
+        .contact-item strong {
             color: #0056b3;
             font-size: 1em;
         }
 
-        .procedure-list {
-            list-style: disc;
-            margin-left: 20px;
-            margin-top: 5px;
-            color: #555;
-        }
-
-        .procedure-list li {
-            margin-bottom: 3px;
-        }
-
+        /* New styles for procedure sections */
         .procedure-risk-section {
             border: 1px solid #e0e0e0;
             padding: 15px;
             margin-top: 15px;
+            margin-bottom: 20px;
             border-radius: 8px;
             background-color: #fcfcfc;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
 
         .procedure-risk-section h3 {
-            color: #4CAF50;
+            color: #007bff; /* Primary blue for risk title */
             margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .procedure-entity-item {
+            background-color: #e9f5ff; /* Lighter blue for entity blocks */
+            border: 1px solid #cce5ff;
+            padding: 12px 18px;
             margin-bottom: 10px;
-            font-size: 1.2em;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .procedure-entity-item strong {
+            display: block;
+            font-size: 1.15em;
+            color: #0056b3;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px dotted #a8daff;
+        }
+        .procedure-entity-item ul {
+            list-style: decimal; /* Numbered list for procedures */
+            margin-left: 20px;
+            margin-top: 5px;
+            color: #333;
+        }
+        .procedure-entity-item ul li {
+            margin-bottom: 5px;
+            line-height: 1.5;
         }
 
         .role-selector {
@@ -393,9 +434,8 @@
                 per questo comune.</p>
         </div>
 
-        <div id="procedures-info-card" class="info-card" data-roles="ente">
-            <h2><i class="fas fa-clipboard-list mr-2"></i>Procedure Operative per Ente</h2>
-            <p>Queste procedure sono associate a rischi specifici e agli enti responsabili.</p>
+        <div id="procedures-info-card" class="info-card" data-roles="comune,ente"> <h2><i class="fas fa-clipboard-list mr-2"></i>Procedure Operative per Operatori ed Enti</h2>
+            <p>Queste procedure sono associate a rischi specifici e delineano i compiti per i vari enti responsabili durante un'emergenza.</p>
             <div id="procedure-operative-display">
             </div>
             <p class="no-data" id="no-procedure-message" style="display: none;">Nessuna procedura operativa definita
@@ -485,8 +525,22 @@
 
         // Funzione per normalizzare il nome dell'ente per le chiavi (copiata da admin.html)
         function normalizeEntityName(entityName) {
-            return entityName.toLowerCase().replace(/\s+/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, '');
+            // Updated to also map some common entity names to simpler keys if needed for consistency
+            const mappings = {
+                "sindaco": "sindaco",
+                "ufficio tecnico": "ufficiotecnico",
+                "vigili del fuoco": "vigilidelfuoco",
+                "polizia locale": "polizialocale",
+                "carabinieri": "carabinieri",
+                "prefettura": "prefettura",
+                "capitaneria di porto": "capitaneriadiporto",
+                "protezione civile regionale": "protezionecivileregionale",
+                "centro operativo comunale (coc)": "coc" // Example for COC
+            };
+            const normalized = entityName.toLowerCase().replace(/\s+/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, '');
+            return mappings[normalized] || normalized;
         }
+
 
         // Funzione per ottenere il parametro dall'URL
         function getParameterByName(name, url = window.location.href) {
@@ -503,18 +557,27 @@
             // Lista dei rischi predefiniti (deve essere identica a quella in admin.html)
             const predefinedRisks = [
                 "Rischio idraulico", "Rischio diga", "Rischio idrogeologico",
-                "Rischio incendi", "Rischio Sismico", "Rischio neve",
-                "Rischio Industriale", "Rischio Maremoto", "Rischio ambientale"
+                "Rischio incendi", "Rischio Sismico", "Rischio Industriale",
+                "Rischio Maremoto", "Rischio neve", "Rischio ambientale"
             ];
             // Trova il rischio originale confrontando la versione normalizzata
             const foundRisk = predefinedRisks.find(risk => normalizeRiskType(risk) === normalizedRiskType);
             // Se trovato, ritorna il nome originale, altrimenti prova a "de-normalizzare" o ritorna il normalizzato
-            return foundRisk || normalizedRiskType.charAt(0).toUpperCase() + normalizedRiskType.slice(1).replace(/([A-Z])/g, ' $1').trim();
+            if (foundRisk) return foundRisk;
+            // Fallback for simple de-normalization (e.g., "rischioidraulico" -> "Rischio Idraulico")
+            return normalizedRiskType.replace(/([A-Z])/g, ' $1').replace(/^rischio/, 'Rischio ').trim();
         }
 
         // Funzione per ottenere la descrizione testuale del colore di criticità
         function getColorDescription(criticityCode) {
             return globalColors[criticityCode] ? globalColors[criticityCode].description : 'non definita. Contattare le autorità competenti per maggiori informazioni.';
+        }
+
+        function getCriticityColorClass(criticityCode) {
+            if (globalColors[criticityCode]) {
+                return `color-${globalColors[criticityCode].label.toLowerCase()}`;
+            }
+            return '';
         }
 
         // --- Dati GeoJSON per le Aree di Emergenza (per Policoro) ---
@@ -708,18 +771,18 @@
                         "alertStatus": "A2", // Giallo
                         "alertMessage": "Possibili esondazioni di corsi d'acqua minori in caso di forti piogge. Evitare zone a ridosso dei corsi d'acqua.",
                         "guidelines": {
-                            "before": ["Pulire grondaie e tombini.", "Non gettare rifiuti nei fiumi.", "Verificare la stabilità di argini e sponde."],
-                            "during": ["Non avvicinarsi a corsi d'acqua.", "Non transitare in sottopassi.", "Muoversi solo se strettamente necessario."],
-                            "after": ["Seguire le indicazioni delle autorità.", "Verificare danni a strutture e infrastrutture.", "Non bere acqua dal rubinetto se non certificata."]
+                            "before": ["Pulire grondaie e tombini per facilitare il deflusso dell'acqua.", "Non gettare rifiuti nei fiumi o nei canali di scolo per evitare ostruzioni.", "Verificare la stabilità di argini e sponde private se adiacenti a corsi d'acqua."],
+                            "during": ["Non avvicinarsi a corsi d'acqua in piena, argini o ponti.", "Non transitare in sottopassi o zone allagate.", "Muoversi solo se strettamente necessario e con la massima prudenza."],
+                            "after": ["Seguire le indicazioni delle autorità e dei bollettini ufficiali.", "Verificare danni a strutture e infrastrutture (abitazioni, recinzioni).", "Non bere acqua dal rubinetto se non certificata come potabile dalle autorità."]
                         }
                     },
                     "rischiomaremoto": {
                         "alertStatus": "A1", // Verde, per dimostrazione
                         "alertMessage": "Nessuna allerta maremoto in corso. Monitorare le comunicazioni ufficiali.",
                         "guidelines": {
-                            "before": ["Informarsi sui piani di evacuazione costiera.", "Identificare i punti di raccolta elevati.", "Preparare un kit di emergenza."],
-                            "during": ["In caso di allerta, allontanarsi immediatamente dalla costa verso zone elevate.", "Non tornare indietro per recuperare beni materiali.", "Seguire le vie di fuga indicate."],
-                            "after": ["Attendere il cessato allarme prima di rientrare in aree costiere.", "Verificare l'integrità delle strutture.", "Collaborare con i soccorritori."]
+                            "before": ["Informarsi sui piani di evacuazione costiera e sulle vie di fuga designate.", "Identificare i punti di raccolta elevati e le aree di attesa più vicine.", "Preparare un kit di emergenza con beni di prima necessità (acqua, cibo, farmaci, documenti)."],
+                            "during": ["In caso di allerta o percezione di terremoto con epicentro in mare, allontanarsi immediatamente dalla costa e spostarsi verso aree interne e sopraelevate.", "Non tornare indietro per recuperare beni materiali.", "Seguire scrupolosamente le vie di fuga indicate e le direttive delle forze dell'ordine e della Protezione Civile."],
+                            "after": ["Attendere il cessato allarme ufficiale prima di rientrare in aree costiere.", "Verificare l'integrità delle strutture abitative e lavorative.", "Collaborare con i soccorritori e le autorità per la gestione dell'emergenza."]
                         }
                     }
                 },
@@ -734,18 +797,66 @@
                 ],
                 "procedure_operative": {
                     "rischioidraulico": {
-                        "sindaco": ["Emettere ordinanza di allerta.", "Attivare il COC.", "Coordinare le operazioni di soccorso."],
-                        "ufficiotecnico": ["Monitorare i livelli dei fiumi.", "Verificare la funzionalità delle pompe di sollevamento."],
-                        "vigilidelfuoco": ["Intervenire per prosciugamenti.", "Assistere la popolazione in aree allagate."],
-                        "polizialocale": ["Regolare il traffico nelle aree a rischio.", "Supportare l'evacuazione se necessaria."]
+                        "sindaco": [
+                            "Emettere ordinanza di allerta idraulica e informare la popolazione.",
+                            "Attivare il Centro Operativo Comunale (COC) e coordinare tutte le funzioni di supporto.",
+                            "Monitorare costantemente i livelli dei corsi d'acqua e l'evoluzione meteorologica.",
+                            "Richiedere il supporto delle squadre di volontariato e dei mezzi necessari."
+                        ],
+                        "ufficiotecnico": [
+                            "Verificare la funzionalità delle opere idrauliche e dei sistemi di drenaggio.",
+                            "Ispezionare i punti critici a rischio esondazione e frana.",
+                            "Preparare mezzi e personale per interventi di ripristino post-evento."
+                        ],
+                        "vigilidelfuoco": [
+                            "Intervenire prontamente per soccorso a persone e beni in aree allagate.",
+                            "Effettuare prosciugamenti e rimozione di ostacoli al deflusso delle acque.",
+                            "Supportare le operazioni di evacuazione se richieste dal COC."
+                        ],
+                        "polizialocale": [
+                            "Interdire il transito veicolare e pedonale nelle zone allagate o a rischio.",
+                            "Regolare il traffico sulle vie alternative.",
+                            "Supportare l'informazione alla popolazione e l'applicazione delle ordinanze comunali."
+                        ],
+                        "carabinieri": [
+                            "Garantire l'ordine pubblico nelle aree colpite o evacuate.",
+                            "Pattugliare le zone a rischio per prevenire sciacallaggi.",
+                            "Supportare le operazioni di evacuazione e assistenza alla popolazione."
+                        ]
                     },
                     "rischiomaremoto": {
-                        "sindaco": ["Emettere ordinanza di evacuazione costiera.", "Attivare i punti di raccolta e accoglienza.", "Informare la popolazione tramite tutti i canali disponibili.", "Coordinare l'apertura e la gestione dei cancelli operativi (Zona Rossa/Arancione)."],
-                        "polizialocale": ["Pattugliare le aree costiere per assicurare l'evacuazione.", "Bloccare gli accessi alle zone a rischio tramite i cancelli designati.", "Assistere i cittadini nelle vie di fuga."],
-                        "protezionecivileregionale": ["Supportare il comune con risorse aggiuntive (mezzi, personale).", "Coordinare l'intervento a livello regionale con altri enti."],
-                        "carabinieri": ["Mantenere l'ordine pubblico nelle aree evacuate.", "Supportare le operazioni di evacuazione e controllo degli accessi."],
-                        "vigilidelfuoco": ["Intervenire per eventuali soccorsi in aree isolate o allagate.", "Supportare le operazioni di ricerca e soccorso."],
-                        "capitaneriadiporto": ["Diramare avvisi alle imbarcazioni.", "Monitorare lo stato del mare e le coste.", "Supportare l'evacuazione dalla zona portuale."]
+                        "sindaco": [
+                            "Emettere ordinanza di allerta e/o evacuazione immediata per le zone costiere a rischio tsunami.",
+                            "Attivare il Centro Operativo Comunale (COC) e tutte le funzioni di emergenza, con particolare attenzione alla funzione censimento popolazione.",
+                            "Coordinare l'apertura e la gestione dei cancelli operativi (Zona Rossa/Arancione) con le forze dell'ordine.",
+                            "Assicurare la massima diffusione delle informazioni tramite sirene, megafoni, social media e messaggistica."
+                        ],
+                        "polizialocale": [
+                            "Attuare il blocco degli accessi alle zone a rischio maremoto tramite i cancelli designati (rossi/arancioni).",
+                            "Pattugliare le aree costiere per assicurare l'evacuazione rapida della popolazione.",
+                            "Assistere i cittadini nelle vie di fuga e indirizzarli verso le aree di attesa/ammassamento.",
+                            "Gestire il flusso veicolare lungo i percorsi di evacuazione."
+                        ],
+                        "protezionecivileregionale": [
+                            "Fornire supporto tecnico e logistico al COC comunale (mezzi, moduli abitativi, personale specializzato).",
+                            "Coordinare l'intervento a livello regionale con altri comuni e enti coinvolti.",
+                            "Monitorare in tempo reale l'onda di maremoto e l'evoluzione della situazione."
+                        ],
+                        "carabinieri": [
+                            "Mantenere l'ordine pubblico e la sicurezza nelle aree evacuate e lungo i percorsi di fuga.",
+                            "Supportare le operazioni di evacuazione, anche con l'uso di mezzi speciali se necessario.",
+                            "Contribuire alla ricerca di eventuali dispersi nelle aree costiere post-evento."
+                        ],
+                        "vigilidelfuoco": [
+                            "Intervenire per eventuali soccorsi urgenti in aree isolate o danneggiate dalla mareggiata.",
+                            "Effettuare sopralluoghi rapidi per verificare la stabilità di strutture pericolanti.",
+                            "Supportare le operazioni di ricerca e soccorso con mezzi anfibi o natanti se richiesto."
+                        ],
+                        "capitaneriadiporto": [
+                            "Diramare avvisi di allerta a tutte le imbarcazioni presenti in porto o in mare.",
+                            "Monitorare lo stato del mare e le coste dal punto di vista marittimo.",
+                            "Supportare l'evacuazione dalla zona portuale e delle aree demaniali marittime."
+                        ]
                     }
                 },
                 "alerts": [
@@ -763,18 +874,18 @@
                         "alertStatus": "A2", // Giallo
                         "alertMessage": "Possibili smottamenti in aree collinari. Si raccomanda prudenza.",
                         "guidelines": {
-                            "before": ["Monitorare il territorio.", "Evitare costruzioni in zone a rischio."],
-                            "during": ["Non avvicinarsi a zone franose."],
-                            "after": ["Attendere verifiche tecniche."]
+                            "before": ["Monitorare il territorio e segnalare anomalie.", "Evitare costruzioni in zone a rischio geomorfologico."],
+                            "during": ["Non avvicinarsi a zone franose o pendii instabili.", "In caso di rumori sospetti o movimenti del terreno, allontanarsi."],
+                            "after": ["Attendere verifiche tecniche prima di rientrare nelle abitazioni.", "Segnalare danni alle autorità."]
                         }
                     },
                     "rischioincendi": {
                         "alertStatus": "A1", // Verde
-                        "alertMessage": "Basso rischio incendi.",
+                        "alertMessage": "Basso rischio incendi. Mantenere alta la vigilanza.",
                         "guidelines": {
-                            "before": ["Pulire aree verdi.", "Non accendere fuochi."],
-                            "during": ["Chiamare i soccorsi."],
-                            "after": ["Verificare danni."]
+                            "before": ["Pulire aree verdi intorno alle abitazioni.", "Non accendere fuochi all'aperto, soprattutto in estate.", "Non gettare sigarette accese."],
+                            "during": ["Chiamare immediatamente i soccorsi (112, 115) in caso di avvistamento di incendio.", "Seguire le indicazioni dei vigili del fuoco.", "Allontanarsi dalle aree interessate dal fumo."],
+                            "after": ["Verificare danni a cose e persone.", "Attendere l'ok delle autorità per rientrare in aree evacuate."]
                         }
                     }
                 },
@@ -788,8 +899,9 @@
                 ],
                 "procedure_operative": {
                     "rischioidrogeologico": {
-                        "sindaco": ["Valutare la situazione.", "Attivare squadre di monitoraggio."],
-                        "protezionecivileregionale": ["Fornire supporto tecnico."]
+                        "sindaco": ["Valutare la situazione e attivare il presidio del territorio.", "Emettere avvisi di cautela alla popolazione nelle aree a rischio.", "Organizzare squadre di monitoraggio per i versanti instabili."],
+                        "ufficiotecnico": ["Effettuare sopralluoghi tecnici per valutare la stabilità dei terreni.", "Disporre eventuali interventi urgenti di messa in sicurezza."],
+                        "protezionecivileregionale": ["Fornire supporto tecnico con geologi e mezzi speciali.", "Valutare la necessità di attivare piani di evacuazione regionali."]
                     }
                 },
                 "alerts": [],
@@ -804,9 +916,9 @@
                         "alertStatus": "A3",
                         "alertMessage": "Rischio elevato di smottamenti e frane, specialmente nelle aree dei Sassi in caso di piogge intense.",
                         "guidelines": {
-                            "before": ["Controllare lo stato delle abitazioni nei pressi di versanti.", "Evitare modifiche non autorizzate del territorio."],
-                            "during": ["Non avvicinarsi a pendii o aree instabili.", "In caso di smottamenti, allontanarsi immediatamente e avvisare le autorità."],
-                            "after": ["Attendere le verifiche geologiche prima di rientrare in aree a rischio."]
+                            "before": ["Controllare lo stato delle abitazioni nei pressi di versanti e canali di scolo.", "Evitare modifiche non autorizzate del territorio che possano alterare il deflusso delle acque."],
+                            "during": ["Non avvicinarsi a pendii instabili o corsi d'acqua in piena.", "In caso di smottamenti, allontanarsi immediatamente e avvisare le autorità (112, Protezione Civile)."],
+                            "after": ["Attendere le verifiche geologiche e strutturali prima di rientrare in aree a rischio o in abitazioni danneggiate."]
                         }
                     }
                 },
@@ -819,8 +931,10 @@
                 ],
                 "procedure_operative": {
                     "rischioidrogeologico": {
-                        "ufficiotecnico": ["Monitoraggio costante delle aree a rischio frana.", "Interventi di messa in sicurezza."],
-                        "protezionecivileregionale": ["Supporto logistico e tecnico per evacuazioni."]
+                        "sindaco": ["Attivare il COC e il piano di emergenza comunale.", "Disporre l'evacuazione preventiva delle aree a rischio frana.", "Coordinare gli interventi di soccorso e messa in sicurezza."],
+                        "ufficiotecnico": ["Monitoraggio costante delle aree a rischio frana con droni e sensori.", "Disporre e supervisionare gli interventi urgenti di messa in sicurezza dei versanti.", "Valutare l'agibilità degli edifici post-evento."],
+                        "vigilidelfuoco": ["Intervenire per soccorso a persone intrappolate o isolate da frane.", "Supportare le operazioni di evacuazione e allestimento aree di accoglienza."],
+                        "carabinieri": ["Mantenere l'ordine pubblico nelle aree evacuate e nelle zone colpite.", "Pattugliare le strade interrotte per impedire l'accesso."]
                     }
                 },
                 "alerts": [
@@ -835,11 +949,11 @@
                     "generale": "Potenza è esposta principalmente a rischio sismico e idrogeologico.",
                     "rischio sismico": {
                         "alertStatus": "A2",
-                        "alertMessage": "Area a media sismicità. Prestare attenzione alle strutture.",
+                        "alertMessage": "Area a media sismicità. Prestare attenzione alle strutture e prepararsi a comportamenti adeguati.",
                         "guidelines": {
-                            "before": ["Verificare l'integrità strutturale degli edifici.", "Avere un piano di emergenza familiare."],
-                            "during": ["Seguire le norme di comportamento antisismico."],
-                            "after": ["Controllare la propria sicurezza e quella dei familiari."]
+                            "before": ["Verificare l'integrità strutturale degli edifici e consultare un tecnico se ci sono dubbi.", "Preparare un kit di emergenza con acqua, cibo, medicine e torcia.", "Avere un piano di emergenza familiare e punti di ritrovo."],
+                            "during": ["Cercare riparo sotto tavoli robusti o in vani delle porte se all'interno.", "Allontanarsi da finestre, mobili alti e oggetti che possono cadere.", "Se all'aperto, allontanarsi da edifici, alberi, lampioni e linee elettriche."],
+                            "after": ["Controllare la propria sicurezza e quella dei familiari.", "Interrompere gas ed elettricità se possibile e sicuro.", "Non usare ascensori.", "Recarsi ai punti di raccolta designati se necessario."]
                         }
                     }
                 },
@@ -852,8 +966,10 @@
                 ],
                 "procedure_operative": {
                     "rischio sismico": {
-                        "comunepotenza": ["Attivare squadre di valutazione danni.", "Organizzare punti di assistenza e triage."],
-                        "vigilidelfuoco": ["Ricerca e soccorso dispersi.", "Messa in sicurezza edifici crollati."]
+                        "comunepotenza": ["Attivare immediatamente il COC e diramare le prime informazioni alla popolazione.", "Organizzare squadre di valutazione danni sugli edifici pubblici e privati.", "Predisporre i punti di assistenza e triage sanitario."],
+                        "vigilidelfuoco": ["Ricerca e soccorso di persone sotto le macerie.", "Messa in sicurezza di edifici crollati o pericolanti.", "Interventi per fughe di gas o incendi post-sisma."],
+                        "carabinieri": ["Garantire l'ordine e la sicurezza pubblica nelle aree colpite e nei centri di accoglienza.", "Supportare le evacuazioni e il blocco delle aree inagibili."],
+                        "protezionecivileregionale": ["Coordinare l'invio di colonne mobili e risorse da altre province/regioni.", "Allestire campi base e strutture di accoglienza di media/lunga durata."]
                     }
                 },
                 "alerts": [],
@@ -951,11 +1067,11 @@
                             <p>Stato: <span class="font-semibold text-${riskDetails.alertStatus.toLowerCase().replace('a','')}-700 criticity-box ${getCriticityColorClass(riskDetails.alertStatus)}">${globalColors[riskDetails.alertStatus].label || riskDetails.alertStatus}</span></p>
                             <p>${riskDetails.alertMessage}</p>
                             ${riskDetails.guidelines ? `
-                                <h4 class="font-semibold text-sm mt-3 mb-1 text-gray-700">Linee Guida per i Cittadini:</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                                    ${riskDetails.guidelines.before && riskDetails.guidelines.before.length > 0 ? `<div class="bg-gray-50 p-2 rounded"><strong>Prima:</strong><ul class="list-disc ml-4">${riskDetails.guidelines.before.map(g => `<li>${g}</li>`).join('')}</ul></div>` : ''}
-                                    ${riskDetails.guidelines.during && riskDetails.guidelines.during.length > 0 ? `<div class="bg-gray-50 p-2 rounded"><strong>Durante:</strong><ul class="list-disc ml-4">${riskDetails.guidelines.during.map(g => `<li>${g}</li>`).join('')}</ul></div>` : ''}
-                                    ${riskDetails.guidelines.after && riskDetails.guidelines.after.length > 0 ? `<div class="bg-gray-50 p-2 rounded"><strong>Dopo:</strong><ul class="list-disc ml-4">${riskDetails.guidelines.after.map(g => `<li>${g}</li>`).join('')}</ul></div>` : ''}
+                                <div class="risk-guidelines">
+                                    <h4>Linee Guida per i Cittadini:</h4>
+                                    ${riskDetails.guidelines.before && riskDetails.guidelines.before.length > 0 ? `<div class="mb-2"><strong>Prima:</strong><ul class="list-disc ml-4">${riskDetails.guidelines.before.map(g => `<li>${g}</li>`).join('')}</ul></div>` : ''}
+                                    ${riskDetails.guidelines.during && riskDetails.guidelines.during.length > 0 ? `<div class="mb-2"><strong>Durante:</strong><ul class="list-disc ml-4">${riskDetails.guidelines.during.map(g => `<li>${g}</li>`).join('')}</ul></div>` : ''}
+                                    ${riskDetails.guidelines.after && riskDetails.guidelines.after.length > 0 ? `<div class="mb-2"><strong>Dopo:</strong><ul class="list-disc ml-4">${riskDetails.guidelines.after.map(g => `<li>${g}</li>`).join('')}</ul></div>` : ''}
                                 </div>
                             ` : ''}
                         `;
@@ -1100,21 +1216,32 @@
                         const riskDisplayName = getRiskDisplayNameFromNormalized(riskKey);
                         const procedureRiskSection = document.createElement('div');
                         procedureRiskSection.className = 'procedure-risk-section';
-                        procedureRiskSection.innerHTML = `<h3><i class="fas fa-clipboard-check mr-2"></i>Procedure per ${riskDisplayName}</h3>`;
+                        procedureRiskSection.innerHTML = `<h3><i class="fas fa-tasks"></i> Procedure per ${riskDisplayName}</h3>`;
 
                         const proceduresForRisk = comuneData.procedure_operative[riskKey];
-                        for (const entityKey in proceduresForRisk) {
-                            const entityDisplayName = entityKey.charAt(0).toUpperCase() + entityKey.slice(1).replace(/([A-Z])/g, ' $1').replace('protezionecivileregionale', 'Protezione Civile Regionale').replace('vigilidelfuoco', 'Vigili del Fuoco').replace('polizialocale', 'Polizia Locale').replace('carabinieri', 'Carabinieri').replace('capitaneriadiporto', 'Capitaneria di Porto'); // Basic de-normalization for display
+                        // Sort entities for consistent display (e.g., Sindaco, Polizia Locale, Carabinieri, etc.)
+                        const sortedEntityKeys = Object.keys(proceduresForRisk).sort((a, b) => {
+                            const order = ["sindaco", "coc", "polizialocale", "carabinieri", "vigilidelfuoco", "capitaneriadiporto", "ufficiotecnico", "protezionecivileregionale"];
+                            const indexA = order.indexOf(normalizeEntityName(a));
+                            const indexB = order.indexOf(normalizeEntityName(b));
+                            if (indexA === -1 && indexB === -1) return a.localeCompare(b); // If both not in order, sort alphabetically
+                            if (indexA === -1) return 1; // Put non-ordered at end
+                            if (indexB === -1) return -1; // Put non-ordered at end
+                            return indexA - indexB;
+                        });
+
+                        sortedEntityKeys.forEach(entityKey => {
+                            const entityDisplayName = entityKey.split(/(?=[A-Z])/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ').replace('coc', 'Centro Operativo Comunale (COC)').replace('ufficiotecnico', 'Ufficio Tecnico').replace('vigilidelfuoco', 'Vigili del Fuoco').replace('polizialocale', 'Polizia Locale').replace('carabinieri', 'Carabinieri').replace('capitaneriadiporto', 'Capitaneria di Porto').replace('protezionecivileregionale', 'Protezione Civile Regionale');
                             const procedureItem = document.createElement('div');
-                            procedureItem.className = 'procedure-item';
+                            procedureItem.className = 'procedure-entity-item';
                             procedureItem.innerHTML = `
                                 <strong>${entityDisplayName}:</strong>
-                                <ul class="procedure-list">
+                                <ul>
                                     ${proceduresForRisk[entityKey].map(proc => `<li>${proc}</li>`).join('')}
                                 </ul>
                             `;
                             procedureRiskSection.appendChild(procedureItem);
-                        }
+                        });
                         procedureOperativeDisplay.appendChild(procedureRiskSection);
                     }
                 } else {
