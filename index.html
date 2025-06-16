@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protezione Civile Basilicata - Bollettino Regionale</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
+            font-size: 1.8em;
+        }
+
+        #map-region {
+            height: 500px;
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .comuni-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .comune-card {
+            background-color: #fdfdfd;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-decoration: none;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .comune-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .comune-card .comune-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .comune-card .criticity-label {
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            font-size: 0.9em;
+            display: inline-block;
+        }
+
+        /* Colori dinamici basati sulle classi */
+        .color-green { background-color: #28a745; }
+        .color-yellow { background-color: #ffc107; color: #333; }
+        .color-orange { background-color: #fd7e14; }
+        .color-red { background-color: #dc3545; }
+
+        .timestamp {
+            font-size: 0.9em;
+            color: #777;
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .alert-summary {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .alert-summary i {
+            font-size: 2em;
+            color: #ffc107;
+        }
+        .alert-summary.info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        .alert-summary.info i { color: #17a2b8; }
+        .alert-summary.warning { background-color: #fff3cd; border-color: #ffeeba; color: #856404; }
+        .alert-summary.warning i { color: #ffc107; }
+        .alert-summary.danger { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .alert-summary.danger i { color: #dc3545; }
+
+        .loading-message {
+            text-align: center;
+            padding: 30px;
+            color: #555;
+            font-style: italic;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1><i class="fas fa-bullhorn"></i> Bollettino Regionale Protezione Civile Basilicata</h1>
+
+        <div id="overall-alert-summary" class="alert-summary info">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Stato Generale:</strong>
+                <p id="overall-alert-text">Caricamento dello stato di allerta regionale...</p>
+            </div>
+        </div>
+
+        <h2><i class="fas fa-map"></i> Panoramica Regionale</h2>
+        <div id="map-region"></div>
+        <p class="timestamp">Mappa interattiva dei Comuni. Clicca su un comune per i dettagli.</p>
+
+        <h2><i class="fas fa-city"></i> Comuni della Basilicata</h2>
+        <p class="loading-message" id="comuni-loading">Caricamento dei comuni...</p>
+        <div id="comuni-list" class="comuni-grid">
+            </div>
+
+        <div class="timestamp">
+            Ultimo aggiornamento dati: <span id="last-updated">Caricamento...</span>
+        </div>
+    </div>
+
+    <script>
+        // Funzioni di utilità (normalizzazione)
+        function normalizeComuneName(nome) {
+            if (!nome) return "";
+            return nome.toLowerCase().trim().replace(/\s+/g, ' ').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        // Colori e descrizioni di criticità globali (devono essere uguali in tutte le pagine)
+        const globalColors = {
+            "A1": { label: "Verde", hex: "#28a745", description: "di attenzione ordinaria, senza particolari criticità imminenti. Si raccomanda cautela e monitoraggio." },
+            "A2": { label: "Giallo", hex: "#ffc107", description: "di moderata attenzione, con possibili criticità locali. Si invita a prestare attenzione e a seguire le indicazioni delle autorità." },
+            "A3": { label: "Arancione", hex: "#fd7e14", description: "di attenzione elevata, con criticità significative e potenziale impatto. È consigliabile adottare misure precauzionali e tenersi informati." },
+            "A4": { label: "Rosso", hex: "#dc3545", description: "di allerta massima, con grave rischio e necessità di precauzioni immediate. Seguire strettamente le direttive delle autorità e, se necessario, attuare i piani di emergenza." }
+        };
+
+        function getCriticityColorClass(criticityCode) {
+            const criticityMap = { 'A1': 'color-green', 'A2': 'color-yellow', 'A3': 'color-orange', 'A4': 'color-red' };
+            return criticityMap[criticityCode] || '';
+        }
+
+        function getCriticityLabel(criticityCode) {
+            return globalColors[criticityCode] ? globalColors[criticityCode].label : 'Non Definito';
+        }
+
+        // Dati fittizi dei comuni (verranno popolati meglio con le tue indicazioni)
+        const dummyComuniData = {
+            "policoro": {
+                "originalName": "Policoro",
+                "criticità": "A2", // Esempio: Giallo per Policoro
+                "rischi": { /* ... vedi comunecosta.html per la struttura dettagliata */ },
+                "aree_emergenza": [ /* ... */ ],
+                "cancelli_operativi": [ /* Dati per cancelli rossi/arancioni verranno aggiunti qui */ ],
+                "contatti_emergenza": [ /* ... */ ],
+                "procedure_operative": { /* ... */ },
+                "alerts": [ /* ... */ ],
+                "lastUpdated": "2025-06-16T13:00:00Z",
+                "lat": 40.21, // Coordinate per centrare la mappa o marker
+                "lon": 16.68
+            },
+            "novasiri": {
+                "originalName": "Nova Siri",
+                "criticità": "A1", // Esempio: Verde per Nova Siri
+                "rischi": { /* ... */ },
+                "aree_emergenza": [ /* ... */ ],
+                "cancelli_operativi": [],
+                "contatti_emergenza": [ /* ... */ ],
+                "procedure_operative": { /* ... */ },
+                "alerts": [],
+                "lastUpdated": "2025-06-16T13:05:00Z",
+                "lat": 40.05,
+                "lon": 16.55
+            },
+            "materadei": {
+                "originalName": "Matera",
+                "criticità": "A3", // Esempio: Arancione per Matera
+                "rischi": { /* ... */ },
+                "aree_emergenza": [],
+                "cancelli_operativi": [],
+                "contatti_emergenza": [],
+                "procedure_operative": {},
+                "alerts": [],
+                "lastUpdated": "2025-06-16T13:10:00Z",
+                "lat": 40.66,
+                "lon": 16.60
+            },
+            "potenza": {
+                "originalName": "Potenza",
+                "criticità": "A2", // Esempio: Giallo per Potenza
+                "rischi": { /* ... */ },
+                "aree_emergenza": [],
+                "cancelli_operativi": [],
+                "contatti_emergenza": [],
+                "procedure_operative": {},
+                "alerts": [],
+                "lastUpdated": "2025-06-16T13:15:00Z",
+                "lat": 40.64,
+                "lon": 15.80
+            }
+            // Aggiungi altri comuni della Basilicata qui, con dati di esempio
+        };
+
+        // Inizializzazione della mappa regionale
+        let mapRegion = null;
+
+        function initializeRegionMap() {
+            if (!mapRegion) {
+                mapRegion = L.map('map-region').setView([40.5, 16.25], 9); // Centro approssimativo della Basilicata
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(mapRegion);
+            }
+
+            // Clear existing markers
+            mapRegion.eachLayer(layer => {
+                if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
+                    mapRegion.removeLayer(layer);
+                }
+            });
+
+            // Add markers for each comune
+            const markers = [];
+            let overallCriticityLevel = 0; // 0=green, 1=yellow, 2=orange, 3=red
+
+            for (const normalizedName in dummyComuniData) {
+                const comune = dummyComuniData[normalizedName];
+                if (comune.lat && comune.lon) {
+                    const criticityClass = getCriticityColorClass(comune.criticità);
+                    const criticityLabel = getCriticityLabel(comune.criticità);
+
+                    // Determine highest criticity for overall summary
+                    let currentCriticityRank = 0;
+                    if (comune.criticità === 'A2') currentCriticityRank = 1;
+                    if (comune.criticità === 'A3') currentCriticityRank = 2;
+                    if (comune.criticità === 'A4') currentCriticityRank = 3;
+                    if (currentCriticityRank > overallCriticityLevel) {
+                        overallCriticityLevel = currentCriticityRank;
+                    }
+
+                    // Create a custom icon with the color of criticity
+                    const customIcon = L.divIcon({
+                        className: `custom-div-icon ${criticityClass}`,
+                        html: `<div style="background-color: ${globalColors[comune.criticità].hex}; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
+                        iconSize: [20, 20], // size of the icon
+                        iconAnchor: [10, 10], // point of the icon which will correspond to marker's location
+                        popupAnchor: [0, -10] // point from which the popup should open relative to the iconAnchor
+                    });
+
+                    const marker = L.marker([comune.lat, comune.lon], { icon: customIcon })
+                        .bindPopup(`<b>Comune di ${comune.originalName}</b><br>Criticità: <span class="${criticityClass}">${criticityLabel}</span>`)
+                        .on('click', () => {
+                            window.location.href = `comunecosta.html?comune=${normalizedName}`;
+                        });
+                    markers.push(marker);
+                }
+            }
+
+            // Add all markers to the map
+            const featureGroup = L.featureGroup(markers).addTo(mapRegion);
+            // Optionally, fit map bounds to all markers if desired, but for a region, a fixed view is often better.
+            // mapRegion.fitBounds(featureGroup.getBounds().pad(0.1));
+
+            // Update overall alert summary
+            const overallAlertSummary = document.getElementById('overall-alert-summary');
+            const overallAlertText = document.getElementById('overall-alert-text');
+            overallAlertSummary.classList.remove('info', 'warning', 'danger'); // Remove previous classes
+
+            let summaryText = 'Nessuna criticità rilevata a livello regionale.';
+            let summaryClass = 'info';
+            let summaryIcon = 'fas fa-info-circle';
+
+            switch (overallCriticityLevel) {
+                case 1:
+                    summaryText = 'Sono presenti alcune criticità moderate a livello regionale. Si invita a consultare i bollettini specifici dei comuni.';
+                    summaryClass = 'warning';
+                    summaryIcon = 'fas fa-exclamation-triangle';
+                    break;
+                case 2:
+                    summaryText = 'Allerta di attenzione elevata in alcune aree della regione. Si raccomanda di prestare massima attenzione e seguire le indicazioni ufficiali.';
+                    summaryClass = 'danger'; // Changed to danger for orange as it's a significant alert
+                    summaryIcon = 'fas fa-exclamation-circle';
+                    break;
+                case 3:
+                    summaryText = 'Stato di allerta massima a livello regionale. Rischio grave, seguire strettamente le direttive delle autorità.';
+                    summaryClass = 'danger';
+                    summaryIcon = 'fas fa-skull-crossbones'; // More severe icon
+                    break;
+            }
+
+            overallAlertSummary.classList.add(summaryClass);
+            overallAlertSummary.querySelector('i').className = summaryIcon;
+            overallAlertText.textContent = summaryText;
+
+            // Populate comuni list below the map
+            const comuniListDiv = document.getElementById('comuni-list');
+            comuniListDiv.innerHTML = ''; // Clear loading message and previous content
+            document.getElementById('comuni-loading').style.display = 'none'; // Hide loading message
+
+            const sortedComuni = Object.values(dummyComuniData).sort((a, b) => a.originalName.localeCompare(b.originalName));
+
+            sortedComuni.forEach(comune => {
+                const comuneCard = document.createElement('a');
+                comuneCard.href = `comunecosta.html?comune=${normalizeComuneName(comune.originalName)}`;
+                comuneCard.className = 'comune-card';
+                const criticityClass = getCriticityColorClass(comune.criticità);
+                const criticityLabel = getCriticityLabel(comune.criticità);
+                comuneCard.innerHTML = `
+                    <div class="comune-name">${comune.originalName}</div>
+                    <div class="criticity-label ${criticityClass}">${criticityLabel}</div>
+                `;
+                comuniListDiv.appendChild(comuneCard);
+            });
+
+            // Update last updated timestamp
+            const now = new Date();
+            document.getElementById('last-updated').textContent = now.toLocaleString('it-IT');
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeRegionMap);
+
+    </script>
+</body>
+
+</html>
