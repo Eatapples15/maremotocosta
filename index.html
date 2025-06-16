@@ -140,12 +140,55 @@
             font-style: italic;
         }
 
+        .role-selector {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .role-selector label {
+            font-weight: bold;
+            color: #495057;
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+
+        .role-selector button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease;
+        }
+
+        .role-selector button:hover {
+            background-color: #0056b3;
+        }
+
+        .role-selector button.active {
+            background-color: #28a745;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <h1><i class="fas fa-bullhorn"></i> Bollettino Regionale Protezione Civile Basilicata</h1>
+
+        <div class="role-selector">
+            <label for="select-role"><i class="fas fa-user-shield"></i> Seleziona il tuo ruolo di accesso:</label>
+            <button id="role-cittadino" data-role="cittadino">Cittadino</button>
+            <button id="role-comune" data-role="comune">Comune</button>
+            <button id="role-ente" data-role="ente">Ente</button>
+        </div>
 
         <div id="overall-alert-summary" class="alert-summary info">
             <i class="fas fa-info-circle"></i>
@@ -200,33 +243,33 @@
                 "criticità": "A2", // Esempio: Giallo per Policoro
                 "rischi": { /* ... vedi comunecosta.html per la struttura dettagliata */ },
                 "aree_emergenza": [ /* ... */ ],
-                "cancelli_operativi": [ /* Dati per cancelli rossi/arancioni verranno aggiunti qui */ ],
+                "punti_operativi": [ /* Dati per cancelli rossi/arancioni verranno aggiunti qui */ ],
                 "contatti_emergenza": [ /* ... */ ],
                 "procedure_operative": { /* ... */ },
                 "alerts": [ /* ... */ ],
                 "lastUpdated": "2025-06-16T13:00:00Z",
-                "lat": 40.21, // Coordinate per centrare la mappa o marker
-                "lon": 16.68
+                "lat": 40.205, // Coordinate per centrare la mappa o marker
+                "lon": 16.675
             },
             "novasiri": {
                 "originalName": "Nova Siri",
                 "criticità": "A1", // Esempio: Verde per Nova Siri
                 "rischi": { /* ... */ },
                 "aree_emergenza": [ /* ... */ ],
-                "cancelli_operativi": [],
+                "punti_operativi": [],
                 "contatti_emergenza": [ /* ... */ ],
                 "procedure_operative": { /* ... */ },
                 "alerts": [],
                 "lastUpdated": "2025-06-16T13:05:00Z",
-                "lat": 40.05,
-                "lon": 16.55
+                "lat": 40.100, // Updated coordinates for Nova Siri
+                "lon": 16.550
             },
-            "materadei": {
+            "matera": { // Changed from materadei to matera for consistency
                 "originalName": "Matera",
                 "criticità": "A3", // Esempio: Arancione per Matera
                 "rischi": { /* ... */ },
                 "aree_emergenza": [],
-                "cancelli_operativi": [],
+                "punti_operativi": [],
                 "contatti_emergenza": [],
                 "procedure_operative": {},
                 "alerts": [],
@@ -239,7 +282,7 @@
                 "criticità": "A2", // Esempio: Giallo per Potenza
                 "rischi": { /* ... */ },
                 "aree_emergenza": [],
-                "cancelli_operativi": [],
+                "punti_operativi": [],
                 "contatti_emergenza": [],
                 "procedure_operative": {},
                 "alerts": [],
@@ -252,6 +295,25 @@
 
         // Inizializzazione della mappa regionale
         let mapRegion = null;
+        let currentRole = localStorage.getItem('selectedRole') || 'cittadino'; // Default role for regional map
+
+        function updateRoleButtons() {
+            document.querySelectorAll('.role-selector button').forEach(button => {
+                if (button.dataset.role === currentRole) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+
+        function setRole(role) {
+            currentRole = role;
+            localStorage.setItem('selectedRole', role); // Store selected role
+            updateRoleButtons();
+            // No need to re-render map or list, as index.html content does not change based on role
+            // Only links to comunecosta.html will be affected
+        }
 
         function initializeRegionMap() {
             if (!mapRegion) {
@@ -299,7 +361,7 @@
                     const marker = L.marker([comune.lat, comune.lon], { icon: customIcon })
                         .bindPopup(`<b>Comune di ${comune.originalName}</b><br>Criticità: <span class="${criticityClass}">${criticityLabel}</span>`)
                         .on('click', () => {
-                            window.location.href = `comunecosta.html?comune=${normalizedName}`;
+                            window.location.href = `comunecosta.html?comune=${normalizedName}&role=${currentRole}`; // Pass selected role
                         });
                     markers.push(marker);
                 }
@@ -350,7 +412,7 @@
 
             sortedComuni.forEach(comune => {
                 const comuneCard = document.createElement('a');
-                comuneCard.href = `comunecosta.html?comune=${normalizeComuneName(comune.originalName)}`;
+                comuneCard.href = `comunecosta.html?comune=${normalizeComuneName(comune.originalName)}&role=${currentRole}`; // Pass selected role
                 comuneCard.className = 'comune-card';
                 const criticityClass = getCriticityColorClass(comune.criticità);
                 const criticityLabel = getCriticityLabel(comune.criticità);
@@ -366,7 +428,16 @@
             document.getElementById('last-updated').textContent = now.toLocaleString('it-IT');
         }
 
-        document.addEventListener('DOMContentLoaded', initializeRegionMap);
+        document.addEventListener('DOMContentLoaded', () => {
+            updateRoleButtons(); // Set initial button state
+            document.querySelectorAll('.role-selector button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    setRole(event.target.dataset.role);
+                    initializeRegionMap(); // Re-render links with new role
+                });
+            });
+            initializeRegionMap();
+        });
 
     </script>
 </body>
